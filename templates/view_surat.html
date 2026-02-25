@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+{% block title %}Detail Surat {{ surat.no_surat }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-800">Detail Surat Izin {{ 'Keluar' if surat.jenis=='keluar' else 'Masuk' }} Barang</h2>
+        <p class="text-gray-500 text-sm mt-1">{{ surat.no_surat }}</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ url_for('surat_list') }}" class="inline-flex items-center gap-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg transition"><i class="fas fa-arrow-left"></i> <span class="hidden sm:inline">Kembali</span></a>
+        <a href="{{ url_for('edit_surat', id=surat.id) }}" class="inline-flex items-center gap-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg transition"><i class="fas fa-edit"></i> <span class="hidden sm:inline">Edit</span></a>
+        <a href="{{ url_for('export_pdf', id=surat.id) }}" class="inline-flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg transition"><i class="fas fa-file-pdf"></i> <span class="hidden sm:inline">PDF</span></a>
+        <button onclick="window.print()" class="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg transition"><i class="fas fa-print"></i> <span class="hidden sm:inline">Print</span></button>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Main info -->
+    <div class="md:col-span-2 space-y-6">
+        <!-- Surat header card -->
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="px-6 py-4 border-b {{ 'bg-red-50' if surat.jenis=='keluar' else 'bg-green-50' }} flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="rounded-lg p-2 {{ 'bg-red-100 text-red-600' if surat.jenis=='keluar' else 'bg-green-100 text-green-600' }}">
+                        <i class="fas fa-{{ 'arrow-up' if surat.jenis=='keluar' else 'arrow-down' }} text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-gray-800">SURAT IZIN {{ 'KELUAR' if surat.jenis=='keluar' else 'MASUK' }} BARANG</p>
+                        <p class="text-xs text-gray-500">{{ company_name }} &mdash; {{ company_sub }}</p>
+                    </div>
+                </div>
+                {% if surat.status == 'approved' %}
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700"><i class="fas fa-check-circle"></i> Disetujui</span>
+                {% elif surat.status == 'rejected' %}
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700"><i class="fas fa-times-circle"></i> Ditolak</span>
+                {% elif surat.status == 'review' %}
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700"><i class="fas fa-search"></i> Review</span>
+                {% else %}
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700"><i class="fas fa-clock"></i> Pending</span>
+                {% endif %}
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mb-6">
+                    <div><p class="text-gray-500 text-xs uppercase">No. Surat</p><p class="font-semibold">{{ surat.no_surat }}</p></div>
+                    <div><p class="text-gray-500 text-xs uppercase">Tanggal</p><p class="font-semibold">{{ surat.tanggal }}</p></div>
+                    <div><p class="text-gray-500 text-xs uppercase">Tgl. Terbit</p><p class="font-semibold">{{ surat.tgl_terbit }}</p></div>
+                    <div><p class="text-gray-500 text-xs uppercase">Divisi</p><p class="font-semibold">{{ surat.divisi }}</p></div>
+                    <div><p class="text-gray-500 text-xs uppercase">No. Dokumen</p><p class="font-semibold">ADP.17.01.015</p></div>
+                    <div><p class="text-gray-500 text-xs uppercase">Revisi</p><p class="font-semibold">2</p></div>
+                </div>
+
+                <!-- Data pemohon -->
+                <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2"><i class="fas fa-user text-blue-500"></i> Data Pemohon</h4>
+                <div class="bg-gray-50 rounded-lg overflow-hidden mb-6">
+                    <table class="w-full text-sm">
+                        <tr class="border-b"><td class="px-4 py-2.5 font-medium text-gray-600 w-40">Nama</td><td class="px-4 py-2.5">{{ surat.nama }}</td></tr>
+                        {% if surat.foto_ktp %}
+                        <tr class="border-b"><td class="px-4 py-2.5 font-medium text-gray-600">Foto KTP/Identitas</td><td class="px-4 py-2.5"><a href="{{ url_for('static', filename='uploads/' + surat.foto_ktp) }}" target="_blank"><img src="{{ url_for('static', filename='uploads/' + surat.foto_ktp) }}" class="h-24 rounded-lg border hover:opacity-90 transition" alt="KTP"></a></td></tr>
+                        {% endif %}
+                        <tr class="border-b"><td class="px-4 py-2.5 font-medium text-gray-600">Badge</td><td class="px-4 py-2.5">{{ surat.badge }}</td></tr>
+                        <tr class="border-b"><td class="px-4 py-2.5 font-medium text-gray-600">No. Kendaraan</td><td class="px-4 py-2.5">{{ surat.no_kendaraan }}</td></tr>
+                        <tr class="border-b"><td class="px-4 py-2.5 font-medium text-gray-600">Perusahaan</td><td class="px-4 py-2.5">{{ surat.perusahaan }}</td></tr>
+                        <tr class="border-b"><td class="px-4 py-2.5 font-medium text-gray-600">No. SPK/MEMO</td><td class="px-4 py-2.5">{{ surat.no_spk }}</td></tr>
+                        {% if surat.file_spk %}
+                        <tr><td class="px-4 py-2.5 font-medium text-gray-600">File SPK</td><td class="px-4 py-2.5"><a href="{{ url_for('static', filename='uploads/' + surat.file_spk) }}" target="_blank" class="inline-flex items-center gap-1.5 bg-green-50 text-green-700 hover:bg-green-100 px-3 py-1.5 rounded-lg text-sm font-medium transition"><i class="fas fa-download"></i> Download File SPK</a></td></tr>
+                        {% endif %}
+                    </table>
+                </div>
+
+                <!-- Daftar barang -->
+                <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2"><i class="fas fa-boxes text-blue-500"></i> Daftar Barang</h4>
+                <div class="overflow-x-auto rounded-lg border">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                            <tr>
+                                <th class="px-4 py-2.5 text-center w-10">No</th>
+                                <th class="px-4 py-2.5 text-left">Nama Barang</th>
+                                <th class="px-4 py-2.5 text-center">Jumlah</th>
+                                <th class="px-4 py-2.5 text-center">Satuan</th>
+                                <th class="px-4 py-2.5 text-left">Keterangan</th>
+                                <th class="px-4 py-2.5 text-center">Foto</th>
+                                <th class="px-4 py-2.5 text-center">Cek User</th>
+                                <th class="px-4 py-2.5 text-center">Cek Satpam</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            {% for item in surat.barang_items %}
+                            <tr>
+                                <td class="px-4 py-2.5 text-center">{{ loop.index }}</td>
+                                <td class="px-4 py-2.5">{{ item.nama_barang }}</td>
+                                <td class="px-4 py-2.5 text-center">{{ item.jumlah }}</td>
+                                <td class="px-4 py-2.5 text-center">{{ item.satuan }}</td>
+                                <td class="px-4 py-2.5 text-gray-500">{{ item.keterangan or '-' }}</td>
+                                <td class="px-4 py-2.5 text-center">
+                                    {% if item.foto %}
+                                    <div class="flex flex-wrap gap-1 justify-center">
+                                        {% for f in item.foto %}
+                                        <a href="{{ url_for('static', filename='uploads/' + f) }}" target="_blank">
+                                            <img src="{{ url_for('static', filename='uploads/' + f) }}" class="h-10 w-10 object-cover rounded border hover:opacity-80" alt="Foto {{ loop.index }}">
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <span class="text-gray-400 text-xs">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-2.5 text-center">
+                                    {% if item.approval_user == 'sesuai' %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"><i class="fas fa-check"></i> Sesuai</span>
+                                    {% elif item.approval_user == 'tidak_sesuai' %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700"><i class="fas fa-times"></i> Tidak</span>
+                                    {% else %}
+                                    <span class="text-gray-400 text-xs">Belum</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-2.5 text-center">
+                                    {% if item.approval_satpam == 'sesuai' %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"><i class="fas fa-check"></i> Sesuai</span>
+                                    {% elif item.approval_satpam == 'tidak_sesuai' %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700"><i class="fas fa-times"></i> Tidak</span>
+                                    {% else %}
+                                    <span class="text-gray-400 text-xs">Belum</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tanda tangan -->
+        <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h4 class="font-semibold text-gray-700 mb-6 flex items-center gap-2"><i class="fas fa-signature text-blue-500"></i> Tanda Tangan</h4>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 text-center text-sm">
+                <!-- Pemohon (Creator) -->
+                <div class="border rounded-lg p-4">
+                    <p class="text-xs text-gray-400 uppercase mb-1">Pemohon</p>
+                    <div class="my-1">&nbsp;</div>
+                    <div class="mb-2">&nbsp;</div>
+                    <div class="border-t-2 border-blue-500 pt-2">
+                        <p class="font-semibold text-gray-800">{{ surat.pemohon or '________________' }}</p>
+                        <p class="text-xs text-gray-400">Pemohon</p>
+                    </div>
+                </div>
+                <!-- User / Pemberi Kerja -->
+                <div class="border rounded-lg p-4">
+                    <p class="text-xs text-gray-400 uppercase mb-1">Pemberi Kerja</p>
+                    {% if surat.approval_user == 'sesuai' %}
+                    <div class="inline-block px-3 py-1 rounded border-2 border-green-500 bg-green-50 text-green-700 text-xs font-bold transform -rotate-2 my-1">✓ SESUAI</div>
+                    {% elif surat.approval_user == 'tidak_sesuai' %}
+                    <div class="inline-block px-3 py-1 rounded border-2 border-red-500 bg-red-50 text-red-700 text-xs font-bold transform -rotate-2 my-1">✗ TIDAK SESUAI</div>
+                    {% else %}
+                    <p class="text-xs text-gray-400 my-1">⏳ Menunggu</p>
+                    {% endif %}
+                    {% if surat.approval_user_at %}<p class="text-[10px] text-gray-400">{{ surat.approval_user_at }}</p>{% endif %}
+                    <div class="mb-2">&nbsp;</div>
+                    <div class="border-t-2 border-blue-500 pt-2">
+                        <p class="font-semibold text-gray-800">{{ surat.approval_user_by_name or '________________' }}</p>
+                        <p class="text-xs text-gray-400">User / Pemberi Kerja</p>
+                    </div>
+                </div>
+                <!-- Satpam -->
+                <div class="border rounded-lg p-4">
+                    <p class="text-xs text-gray-400 uppercase mb-1">Diperiksa (Satpam)</p>
+                    {% if surat.approval_satpam == 'sesuai' %}
+                    <div class="inline-block px-3 py-1 rounded border-2 border-green-500 bg-green-50 text-green-700 text-xs font-bold transform -rotate-2 my-1">✓ SESUAI</div>
+                    {% elif surat.approval_satpam == 'tidak_sesuai' %}
+                    <div class="inline-block px-3 py-1 rounded border-2 border-red-500 bg-red-50 text-red-700 text-xs font-bold transform -rotate-2 my-1">✗ TIDAK SESUAI</div>
+                    {% else %}
+                    <p class="text-xs text-gray-400 my-1">⏳ Menunggu</p>
+                    {% endif %}
+                    {% if surat.approval_satpam_at %}<p class="text-[10px] text-gray-400">{{ surat.approval_satpam_at }}</p>{% endif %}
+                    <div class="mb-2">&nbsp;</div>
+                    <div class="border-t-2 border-blue-500 pt-2">
+                        <p class="font-semibold text-gray-800">{{ surat.approval_satpam_by_name or '________________' }}</p>
+                        <p class="text-xs text-gray-400">Satpam</p>
+                    </div>
+                </div>
+                <!-- Asman Umum -->
+                <div class="border rounded-lg p-4">
+                    <p class="text-xs text-gray-400 uppercase mb-1">Diperiksa (Asman)</p>
+                    {% if surat.approval_asman == 'approved' %}
+                    <div class="inline-block px-3 py-1 rounded border-2 border-green-500 bg-green-50 text-green-700 text-xs font-bold transform -rotate-2 my-1">✓ DISETUJUI</div>
+                    {% elif surat.approval_asman == 'rejected' %}
+                    <div class="inline-block px-3 py-1 rounded border-2 border-red-500 bg-red-50 text-red-700 text-xs font-bold transform -rotate-2 my-1">✗ DITOLAK</div>
+                    {% else %}
+                    <p class="text-xs text-gray-400 my-1">⏳ Menunggu</p>
+                    {% endif %}
+                    {% if surat.approval_asman_at %}<p class="text-[10px] text-gray-400">{{ surat.approval_asman_at }}</p>{% endif %}
+                    <div class="mb-2">&nbsp;</div>
+                    <div class="border-t-2 border-blue-500 pt-2">
+                        <p class="font-semibold text-gray-800">{{ surat.approval_asman_by_name or '________________' }}</p>
+                        <p class="text-xs text-gray-400">Asman Umum</p>
+                    </div>
+                </div>
+                <!-- Manager Administrasi -->
+                <div class="border rounded-lg p-4">
+                    <p class="text-xs text-gray-400 uppercase mb-1">Disetujui Oleh</p>
+                    {% if surat.approval_manager == 'approved' %}
+                    <div class="inline-block px-3 py-1 rounded border-2 border-green-500 bg-green-50 text-green-700 text-xs font-bold transform -rotate-2 my-1">✓ DISETUJUI</div>
+                    {% elif surat.approval_manager == 'rejected' %}
+                    <div class="inline-block px-3 py-1 rounded border-2 border-red-500 bg-red-50 text-red-700 text-xs font-bold transform -rotate-2 my-1">✗ DITOLAK</div>
+                    {% else %}
+                    <p class="text-xs text-gray-400 my-1">⏳ Menunggu</p>
+                    {% endif %}
+                    {% if surat.approval_manager_at %}<p class="text-[10px] text-gray-400">{{ surat.approval_manager_at }}</p>{% endif %}
+                    <div class="mb-2">&nbsp;</div>
+                    <div class="border-t-2 border-blue-500 pt-2">
+                        <p class="font-semibold text-gray-800">{{ surat.approval_manager_by_name or '________________' }}</p>
+                        <p class="text-xs text-gray-400">Manager Administrasi</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approval Progress -->
+        <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h4 class="font-semibold text-gray-700 mb-4 flex items-center gap-2"><i class="fas fa-tasks text-blue-500"></i> Alur Persetujuan</h4>
+            <div class="space-y-4">
+                <!-- Step 0: Pemohon (Creator) -->
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-blue-100 text-blue-700">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-800">Pemohon</p>
+                        <p class="text-xs text-blue-600"><i class="fas fa-file-alt mr-1"></i>Surat dibuat oleh <strong>{{ surat.pemohon or surat.nama }}</strong></p>
+                    </div>
+                </div>
+                <div class="ml-4 border-l-2 border-blue-300 h-4"></div>
+                <!-- Step 1: User / Pemberi Kerja -->
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                        {% if surat.approval_user in ('sesuai', 'tidak_sesuai') %}{% if surat.approval_user == 'sesuai' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}{% else %}bg-gray-100 text-gray-400{% endif %}">
+                        {% if surat.approval_user == 'sesuai' %}<i class="fas fa-check"></i>{% elif surat.approval_user == 'tidak_sesuai' %}<i class="fas fa-times"></i>{% else %}1{% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-800">User / Pemberi Kerja</p>
+                        {% if surat.approval_user == 'sesuai' %}
+                        <p class="text-xs text-green-600"><i class="fas fa-check-circle mr-1"></i>Sesuai oleh <strong>{{ surat.approval_user_by_name }}</strong> — {{ surat.approval_user_at }}</p>
+                        {% elif surat.approval_user == 'tidak_sesuai' %}
+                        <p class="text-xs text-red-600"><i class="fas fa-times-circle mr-1"></i>Tidak Sesuai oleh <strong>{{ surat.approval_user_by_name }}</strong> — {{ surat.approval_user_at }}</p>
+                        {% else %}
+                        <p class="text-xs text-gray-400">Menunggu pengecekan pemberi kerja</p>
+                        {% endif %}
+                        {% if surat.approval_user_note %}<p class="text-xs text-gray-500 mt-0.5 italic">"{{ surat.approval_user_note }}"</p>{% endif %}
+                    </div>
+                </div>
+                <div class="ml-4 border-l-2 {{ 'border-green-300' if surat.approval_user == 'sesuai' else 'border-gray-200' }} h-4"></div>
+                <!-- Step 2: Satpam -->
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                        {% if surat.approval_satpam == 'sesuai' %}bg-green-100 text-green-700{% elif surat.approval_satpam == 'tidak_sesuai' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-400{% endif %}">
+                        {% if surat.approval_satpam == 'sesuai' %}<i class="fas fa-check"></i>{% elif surat.approval_satpam == 'tidak_sesuai' %}<i class="fas fa-times"></i>{% else %}2{% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-800">Satpam / Security</p>
+                        {% if surat.approval_satpam == 'sesuai' %}
+                        <p class="text-xs text-green-600"><i class="fas fa-check-circle mr-1"></i>Sesuai oleh <strong>{{ surat.approval_satpam_by_name }}</strong> — {{ surat.approval_satpam_at }}</p>
+                        {% elif surat.approval_satpam == 'tidak_sesuai' %}
+                        <p class="text-xs text-red-600"><i class="fas fa-times-circle mr-1"></i>Tidak Sesuai oleh <strong>{{ surat.approval_satpam_by_name }}</strong> — {{ surat.approval_satpam_at }}</p>
+                        {% else %}
+                        <p class="text-xs text-gray-400">Menunggu pemeriksaan</p>
+                        {% endif %}
+                        {% if surat.approval_satpam_note %}<p class="text-xs text-gray-500 mt-0.5 italic">"{{ surat.approval_satpam_note }}"</p>{% endif %}
+                    </div>
+                </div>
+                <div class="ml-4 border-l-2 {{ 'border-green-300' if surat.approval_satpam == 'sesuai' else 'border-gray-200' }} h-4"></div>
+                <!-- Step 3: Asman Umum -->
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                        {% if surat.approval_asman == 'approved' %}bg-green-100 text-green-700{% elif surat.approval_asman == 'rejected' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-400{% endif %}">
+                        {% if surat.approval_asman == 'approved' %}<i class="fas fa-check"></i>{% elif surat.approval_asman == 'rejected' %}<i class="fas fa-times"></i>{% else %}3{% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-800">Asman Umum</p>
+                        {% if surat.approval_asman == 'approved' %}
+                        <p class="text-xs text-green-600"><i class="fas fa-check-circle mr-1"></i>Disetujui oleh <strong>{{ surat.approval_asman_by_name }}</strong> — {{ surat.approval_asman_at }}</p>
+                        {% elif surat.approval_asman == 'rejected' %}
+                        <p class="text-xs text-red-600"><i class="fas fa-times-circle mr-1"></i>Ditolak oleh <strong>{{ surat.approval_asman_by_name }}</strong> — {{ surat.approval_asman_at }}</p>
+                        {% else %}
+                        <p class="text-xs text-gray-400">Menunggu review</p>
+                        {% endif %}
+                        {% if surat.approval_asman_note %}<p class="text-xs text-gray-500 mt-0.5 italic">"{{ surat.approval_asman_note }}"</p>{% endif %}
+                    </div>
+                </div>
+                <div class="ml-4 border-l-2 {{ 'border-green-300' if surat.approval_asman == 'approved' else 'border-gray-200' }} h-4"></div>
+                <!-- Step 4: Manager Administrasi -->
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                        {% if surat.approval_manager == 'approved' %}bg-green-100 text-green-700{% elif surat.approval_manager == 'rejected' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-400{% endif %}">
+                        {% if surat.approval_manager == 'approved' %}<i class="fas fa-check"></i>{% elif surat.approval_manager == 'rejected' %}<i class="fas fa-times"></i>{% else %}4{% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-800">Manager Administrasi</p>
+                        {% if surat.approval_manager == 'approved' %}
+                        <p class="text-xs text-green-600"><i class="fas fa-check-circle mr-1"></i>Disetujui oleh <strong>{{ surat.approval_manager_by_name }}</strong> — {{ surat.approval_manager_at }}</p>
+                        {% elif surat.approval_manager == 'rejected' %}
+                        <p class="text-xs text-red-600"><i class="fas fa-times-circle mr-1"></i>Ditolak oleh <strong>{{ surat.approval_manager_by_name }}</strong> — {{ surat.approval_manager_at }}</p>
+                        {% else %}
+                        <p class="text-xs text-gray-400">Menunggu approval final</p>
+                        {% endif %}
+                        {% if surat.approval_manager_note %}<p class="text-xs text-gray-500 mt-0.5 italic">"{{ surat.approval_manager_note }}"</p>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lampiran foto (dari foto barang) -->
+        {% set foto_items = [] %}
+        {% for item in surat.barang_items %}{% if item.foto %}{% for f in item.foto %}{% if foto_items.append({'f':f,'nama':item.nama_barang}) %}{% endif %}{% endfor %}{% endif %}{% endfor %}
+        {% if foto_items | length > 0 %}
+        {% set fc = foto_items | length %}
+        <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h4 class="font-semibold text-gray-700 mb-4 flex items-center gap-2"><i class="fas fa-camera text-blue-500"></i> Lampiran Foto Barang</h4>
+            <div class="grid gap-4 {{ 'grid-cols-1 sm:grid-cols-2' if fc <= 2 else ('grid-cols-2 md:grid-cols-3' if fc <= 4 else 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4') }}">
+                {% for p in foto_items %}
+                <div class="flex flex-col items-center">
+                    <a href="{{ url_for('static', filename='uploads/' + p.f) }}" target="_blank" class="block w-full">
+                        <img src="{{ url_for('static', filename='uploads/' + p.f) }}" class="rounded-lg shadow border border-gray-200 w-full object-cover hover:opacity-90 transition {{ 'h-56' if fc <= 2 else ('h-44' if fc <= 4 else 'h-32') }}" alt="{{ p.nama }}">
+                    </a>
+                    <p class="text-sm font-semibold text-gray-600 mt-2 text-center truncate w-full" title="{{ p.nama }}">{{ p.nama }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+        <!-- User / Pemberi Kerja Check -->
+        {% if current_user.role in ('user', 'admin') and surat.approval_user == 'pending' %}
+        <div class="bg-white rounded-xl shadow-sm border p-5">
+            <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2"><i class="fas fa-user-check text-blue-500"></i> Pengecekan Pemberi Kerja</h4>
+            <p class="text-xs text-gray-500 mb-3">Periksa kesesuaian tiap barang sebagai pemberi kerja.</p>
+            <form method="POST" action="{{ url_for('approve_surat', id=surat.id) }}" class="space-y-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="stage" value="user">
+                <p class="text-xs text-gray-500 mb-2">Periksa kesesuaian tiap barang:</p>
+                {% for item in surat.barang_items %}
+                <div class="flex items-center justify-between text-sm bg-gray-50 rounded px-3 py-2">
+                    <span class="truncate mr-2">{{ item.nama_barang }}</span>
+                    <select name="item_user_approval_{{ loop.index0 }}" class="text-xs border border-gray-300 rounded px-2 py-1">
+                        <option value="sesuai">Sesuai</option>
+                        <option value="tidak_sesuai">Tidak Sesuai</option>
+                    </select>
+                </div>
+                {% endfor %}
+                <select name="decision" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <option value="sesuai">✅ Semua Sesuai</option>
+                    <option value="tidak_sesuai">❌ Tidak Sesuai</option>
+                </select>
+                <textarea name="note" rows="2" placeholder="Catatan pemberi kerja..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 rounded-lg transition">✓ Simpan Pengecekan</button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Approval Action: Satpam -->
+        {% if current_user.role in ('satpam', 'admin') and surat.approval_user in ('sesuai', 'tidak_sesuai') and surat.approval_satpam == 'pending' %}
+        <div class="bg-white rounded-xl shadow-sm border p-5">
+            <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2"><i class="fas fa-shield-alt text-blue-500"></i> Pemeriksaan Satpam</h4>
+            <form method="POST" action="{{ url_for('approve_surat', id=surat.id) }}" class="space-y-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="stage" value="satpam">
+                <p class="text-xs text-gray-500 mb-2">Periksa kesesuaian tiap barang:</p>
+                {% for item in surat.barang_items %}
+                <div class="flex items-center justify-between text-sm bg-gray-50 rounded px-3 py-2">
+                    <span class="truncate mr-2">{{ item.nama_barang }}</span>
+                    <select name="item_approval_{{ loop.index0 }}" class="text-xs border border-gray-300 rounded px-2 py-1">
+                        <option value="sesuai">Sesuai</option>
+                        <option value="tidak_sesuai">Tidak Sesuai</option>
+                    </select>
+                </div>
+                {% endfor %}
+                <select name="decision" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <option value="sesuai">✅ Semua Sesuai</option>
+                    <option value="tidak_sesuai">❌ Tidak Sesuai</option>
+                </select>
+                <textarea name="note" rows="2" placeholder="Catatan satpam..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-lg transition">Simpan Pemeriksaan</button>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if current_user.role in ('asman', 'admin') and surat.approval_user in ('sesuai', 'tidak_sesuai') and surat.approval_satpam != 'pending' and surat.approval_asman == 'pending' %}
+        <div class="bg-white rounded-xl shadow-sm border p-5">
+            <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2"><i class="fas fa-user-tie text-blue-500"></i> Review Asman Umum</h4>
+            <form method="POST" action="{{ url_for('approve_surat', id=surat.id) }}" class="space-y-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="stage" value="asman">
+                <select name="decision" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <option value="approved">✅ Disetujui</option>
+                    <option value="rejected">❌ Ditolak</option>
+                </select>
+                <textarea name="note" rows="2" placeholder="Catatan asman..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-lg transition">Simpan Review</button>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if current_user.role in ('manager', 'admin') and surat.approval_user in ('sesuai', 'tidak_sesuai') and surat.approval_asman != 'pending' and surat.approval_manager == 'pending' %}
+        <div class="bg-white rounded-xl shadow-sm border p-5">
+            <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2"><i class="fas fa-user-shield text-blue-500"></i> Approval Manager</h4>
+            <form method="POST" action="{{ url_for('approve_surat', id=surat.id) }}" class="space-y-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="stage" value="manager">
+                <select name="decision" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <option value="approved">✅ Disetujui</option>
+                    <option value="rejected">❌ Ditolak</option>
+                </select>
+                <textarea name="note" rows="2" placeholder="Catatan manager..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"></textarea>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-lg transition">Approval Final</button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Status card (admin override) -->
+        {% if current_user.role == 'admin' %}
+        <div class="bg-white rounded-xl shadow-sm border p-5">
+            <h4 class="font-semibold text-gray-700 mb-4">Ubah Status (Admin)</h4>
+            <form method="POST" action="{{ url_for('update_status', id=surat.id) }}" class="space-y-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="pending" {{ 'selected' if surat.status=='pending' }}>Pending</option>
+                    <option value="review" {{ 'selected' if surat.status=='review' }}>Review</option>
+                    <option value="approved" {{ 'selected' if surat.status=='approved' }}>Disetujui</option>
+                    <option value="rejected" {{ 'selected' if surat.status=='rejected' }}>Ditolak</option>
+                </select>
+                <textarea name="catatan" rows="3" placeholder="Catatan (opsional)..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ surat.catatan or '' }}</textarea>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-lg transition">Simpan Status</button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Info card -->
+        <div class="bg-white rounded-xl shadow-sm border p-5">
+            <h4 class="font-semibold text-gray-700 mb-3">Informasi</h4>
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between"><span class="text-gray-500">Dibuat</span><span>{{ surat.created_at }}</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">Diperbarui</span><span>{{ surat.updated_at }}</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">Total Barang</span><span class="font-semibold">{{ surat.barang_items|length }} item</span></div>
+                {% if surat.catatan %}
+                <div class="pt-2 border-t"><p class="text-gray-500 text-xs mb-1">Catatan:</p><p class="text-gray-700">{{ surat.catatan }}</p></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Catatan penting -->
+        <div class="bg-blue-50 rounded-xl border border-blue-200 p-5">
+            <h4 class="font-semibold text-blue-800 mb-2 text-sm"><i class="fas fa-info-circle mr-1"></i> Catatan Penting</h4>
+            <ul class="text-xs text-blue-700 space-y-1.5 list-disc list-inside">
+                <li>Surat ini harus dibawa saat pengambilan/pengiriman barang</li>
+                <li>Barang harus diperiksa oleh petugas keamanan</li>
+                <li>Tanda tangan dan stempel diperlukan untuk keabsahan</li>
+                <li>Surat berlaku pada tanggal yang tercantum</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

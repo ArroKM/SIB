@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .sidebar-link.active { background-color: rgba(255,255,255,0.15); }
+        /* Sidebar transition */
+        #sidebar { transition: transform 0.3s ease, width 0.3s ease; }
+        #mainContent { transition: margin-left 0.3s ease; }
+        /* collapsed state on desktop */
+        .sidebar-collapsed #sidebar { width: 64px; }
+        .sidebar-collapsed #sidebar .sidebar-text { display: none; }
+        .sidebar-collapsed #sidebar .sidebar-header-text { display: none; }
+        .sidebar-collapsed #sidebar .sidebar-section-label { display: none; }
+        .sidebar-collapsed #sidebar .sidebar-user-info { display: none; }
+        .sidebar-collapsed #sidebar .sidebar-logout { display: none; }
+        .sidebar-collapsed #sidebar .sidebar-bottom { justify-content: center; }
+        .sidebar-collapsed #sidebar nav a { justify-content: center; padding-left: 0; padding-right: 0; }
+        .sidebar-collapsed #sidebar nav a i { width: auto; margin: 0; }
+        .sidebar-collapsed #mainContent { margin-left: 64px; }
+        /* Mobile overlay */
+        #sidebarOverlay { transition: opacity 0.3s ease; }
+        /* Notification dropdown */
+        .notif-dropdown { max-height: 400px; overflow-y: auto; }
+        /* Notification bell animation */
+        @keyframes bellSwing {
+            0%, 100% { transform: rotate(0deg); }
+            15% { transform: rotate(14deg); }
+            30% { transform: rotate(-12deg); }
+            45% { transform: rotate(8deg); }
+            60% { transform: rotate(-6deg); }
+            75% { transform: rotate(2deg); }
+        }
+        @keyframes pulseRing {
+            0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+            70% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+            100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+        }
+        .notif-btn:hover .notif-icon { animation: bellSwing 0.8s ease; }
+        .notif-badge-pulse { animation: pulseRing 1.5s infinite; }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body class="h-full bg-gray-50 text-gray-800">
+<div id="appWrapper" class="flex h-full">
+    <!-- Mobile overlay -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden" onclick="closeMobileSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="flex flex-col w-64 bg-gradient-to-b from-blue-800 to-blue-900 text-white min-h-screen fixed z-50
+        -translate-x-full lg:translate-x-0">
+        <div class="px-4 py-4 border-b border-blue-700">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 rounded-lg p-2 flex-shrink-0">
+                    <i class="fas fa-box-open text-xl"></i>
+                </div>
+                <div class="sidebar-header-text min-w-0">
+                    <h1 class="font-bold text-sm leading-tight">IPIMS</h1>
+                    <p class="text-blue-200 text-xs truncate">Surat Izin Barang</p>
+                </div>
+                <!-- Close button (mobile only) -->
+                <button onclick="closeMobileSidebar()" class="lg:hidden ml-auto text-blue-200 hover:text-white">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+        </div>
+        <nav class="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+            <a href="{{ url_for('dashboard') }}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-white/10 transition {{ 'active' if request.endpoint == 'dashboard' }}">
+                <i class="fas fa-chart-pie w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Dashboard</span>
+            </a>
+            <a href="{{ url_for('surat_list') }}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-white/10 transition {{ 'active' if request.endpoint == 'surat_list' }}">
+                <i class="fas fa-file-alt w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Daftar Surat</span>
+            </a>
+            <a href="{{ url_for('add_surat', jenis='keluar') }}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-white/10 transition {{ 'active' if request.endpoint == 'add_surat' }}">
+                <i class="fas fa-plus-circle w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Buat Surat</span>
+            </a>
+            <a href="{{ url_for('notifications_page') }}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-white/10 transition {{ 'active' if request.endpoint == 'notifications_page' }}">
+                <i class="fas fa-bell w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Notifikasi</span>
+                {% if notif_count > 0 %}<span class="sidebar-text bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 ml-auto">{{ notif_count }}</span>{% endif %}
+            </a>
+
+            <div class="pt-3 pb-1">
+                <p class="sidebar-section-label px-3 text-xs font-semibold text-blue-300 uppercase tracking-wider">Laporan</p>
+            </div>
+            <a href="{{ url_for('export_excel') }}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-white/10 transition">
+                <i class="fas fa-file-excel w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Export Excel</span>
+            </a>
+            <a href="{{ url_for('export_report_pdf') }}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-white/10 transition">
+                <i class="fas fa-file-pdf w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Export PDF</span>
+            </a>
+            <a href="{{ url_for('report_barang') }}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-white/10 transition {{ 'active' if request.endpoint == 'report_barang' }}">
+                <i class="fas fa-chart-bar w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Laporan Barang</span>
+            </a>
+
+            {% if current_user.role == 'admin' %}
+            <div class="pt-3 pb-1">
+                <p class="sidebar-section-label px-3 text-xs font-semibold text-blue-300 uppercase tracking-wider">Admin</p>
+            </div>
+            <a href="{{ url_for('user_list') }}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-white/10 transition {{ 'active' if request.endpoint == 'user_list' }}">
+                <i class="fas fa-users-cog w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Kelola User</span>
+            </a>
+            <a href="{{ url_for('activity_log') }}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm hover:bg-white/10 transition {{ 'active' if request.endpoint == 'activity_log' }}">
+                <i class="fas fa-history w-5 text-center flex-shrink-0"></i> <span class="sidebar-text">Log Aktivitas</span>
+            </a>
+            {% endif %}
+        </nav>
+        <div class="px-3 py-3 border-t border-blue-700">
+            <div class="sidebar-bottom flex items-center gap-3">
+                <div class="bg-blue-600 rounded-full w-9 h-9 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                    {{ current_user.nama_lengkap[0] | upper }}
+                </div>
+                <div class="sidebar-user-info flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate">{{ current_user.nama_lengkap }}</p>
+                    <p class="text-xs text-blue-300 capitalize">{{ current_user.role }}</p>
+                </div>
+                <a href="{{ url_for('logout') }}" class="sidebar-logout text-blue-300 hover:text-white flex-shrink-0" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <div id="mainContent" class="flex-1 ml-0 lg:ml-64 flex flex-col min-h-screen">
+        <!-- Top bar -->
+        <header class="bg-white shadow-sm sticky top-0 z-20">
+            <div class="flex items-center justify-between px-4 py-3">
+                <div class="flex items-center gap-3">
+                    <!-- Hamburger (mobile) -->
+                    <button onclick="openMobileSidebar()" class="lg:hidden text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <!-- Sidebar toggle (desktop) -->
+                    <button onclick="toggleDesktopSidebar()" class="hidden lg:block text-gray-600 hover:text-gray-800" title="Toggle sidebar">
+                        <i class="fas fa-bars text-lg"></i>
+                    </button>
+                    <span class="font-bold text-blue-800 text-sm lg:hidden">IPIMS</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <!-- Notification bell -->
+                    <div class="relative" id="notifBell">
+                        <button onclick="toggleNotifDropdown()" class="notif-btn relative w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 border border-gray-200 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md group">
+                            <i class="fas fa-bell text-lg notif-icon text-gray-500 group-hover:text-blue-600 transition-colors"></i>
+                            {% if notif_count > 0 %}
+                            <span id="notifBadge" class="notif-badge-pulse absolute -top-1.5 -right-1.5 bg-gradient-to-r from-red-500 to-rose-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 ring-2 ring-white shadow-lg">{{ notif_count }}</span>
+                            {% endif %}
+                        </button>
+                        <!-- Dropdown -->
+                        <div id="notifDropdown" class="hidden absolute right-0 mt-3 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+                            <div class="px-5 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-bell text-white/80 text-sm"></i>
+                                    <h4 class="font-semibold text-sm text-white">Notifikasi</h4>
+                                </div>
+                                <button onclick="markAllRead()" class="text-xs text-blue-100 hover:text-white transition-colors font-medium">Tandai semua dibaca</button>
+                            </div>
+                            <div id="notifList" class="notif-dropdown divide-y divide-gray-50">
+                                <div class="px-4 py-8 text-center text-gray-400 text-sm"><i class="fas fa-spinner fa-spin mr-1"></i> Memuat...</div>
+                            </div>
+                            <div class="px-4 py-2.5 border-t bg-gray-50 text-center">
+                                <a href="{{ url_for('notifications_page') }}" class="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"><i class="fas fa-external-link-alt mr-1"></i> Lihat Semua Notifikasi</a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- User avatar (mobile) -->
+                    <div class="lg:hidden flex items-center gap-2">
+                        <div class="bg-blue-600 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold text-white">
+                            {{ current_user.nama_lengkap[0] | upper }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="px-4 lg:px-8 pt-4 space-y-2">
+            {% for cat, msg in messages %}
+            <div class="rounded-lg px-4 py-3 text-sm flex items-center gap-2
+                {{ 'bg-green-50 text-green-800 border border-green-200' if cat == 'success' else '' }}
+                {{ 'bg-red-50 text-red-800 border border-red-200' if cat == 'danger' else '' }}
+                {{ 'bg-yellow-50 text-yellow-800 border border-yellow-200' if cat == 'warning' else '' }}
+                {{ 'bg-blue-50 text-blue-800 border border-blue-200' if cat == 'info' else '' }}">
+                <i class="fas {{ 'fa-check-circle' if cat=='success' else 'fa-exclamation-circle' if cat=='danger' else 'fa-exclamation-triangle' if cat=='warning' else 'fa-info-circle' }}"></i>
+                {{ msg }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Page content -->
+        <main class="flex-1 px-4 lg:px-8 py-6">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="border-t bg-white px-4 lg:px-8 py-4 text-center text-xs text-gray-500">
+            &copy; {{ now.year }} {{ company_name }} &mdash; {{ company_sub }} &middot; No. Dokumen: ADP.17.01.015 &middot; Rev: 2
+        </footer>
+    </div>
+</div>
+
+<script>
+// --- Sidebar: Mobile ---
+function openMobileSidebar() {
+    document.getElementById('sidebar').classList.remove('-translate-x-full');
+    document.getElementById('sidebarOverlay').classList.remove('hidden');
+}
+function closeMobileSidebar() {
+    document.getElementById('sidebar').classList.add('-translate-x-full');
+    document.getElementById('sidebarOverlay').classList.add('hidden');
+}
+
+// --- Sidebar: Desktop toggle ---
+function toggleDesktopSidebar() {
+    const wrapper = document.getElementById('appWrapper');
+    wrapper.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('sidebarCollapsed', wrapper.classList.contains('sidebar-collapsed') ? '1' : '0');
+}
+// Restore sidebar state on load
+document.addEventListener('DOMContentLoaded', function() {
+    if (localStorage.getItem('sidebarCollapsed') === '1') {
+        document.getElementById('appWrapper').classList.add('sidebar-collapsed');
+    }
+});
+
+// --- Notifications ---
+let notifOpen = false;
+function toggleNotifDropdown() {
+    const dd = document.getElementById('notifDropdown');
+    notifOpen = !notifOpen;
+    dd.classList.toggle('hidden', !notifOpen);
+    if (notifOpen) loadNotifications();
+}
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+    if (notifOpen && !document.getElementById('notifBell').contains(e.target)) {
+        document.getElementById('notifDropdown').classList.add('hidden');
+        notifOpen = false;
+    }
+});
+
+function loadNotifications() {
+    fetch('/api/notifications')
+        .then(r => r.json())
+        .then(data => {
+            const list = document.getElementById('notifList');
+            if (!data.length) {
+                list.innerHTML = '<div class="px-4 py-10 text-center text-gray-400 text-sm"><div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3"><i class="fas fa-bell-slash text-xl text-gray-300"></i></div><p class="font-medium text-gray-500">Tidak ada notifikasi</p><p class="text-xs text-gray-400 mt-1">Anda akan melihat pemberitahuan di sini</p></div>';
+                return;
+            }
+            list.innerHTML = data.map(n => `
+                <a href="${n.link || '#'}" onclick="markRead(${n.id}, event)" class="flex items-start gap-3 px-4 py-3.5 hover:bg-blue-50/50 transition-colors ${n.is_read ? 'opacity-50' : ''}">
+                    <div class="flex-shrink-0 mt-0.5">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center ${n.is_read ? 'bg-gray-100' : 'bg-gradient-to-br from-blue-500 to-indigo-500'}">
+                            <i class="fas fa-file-alt text-sm ${n.is_read ? 'text-gray-400' : 'text-white'}"></i>
+                        </div>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2">
+                            <p class="text-sm font-semibold text-gray-800 truncate">${n.title}</p>
+                            ${!n.is_read ? '<span class="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500"></span>' : ''}
+                        </div>
+                        <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">${n.message}</p>
+                        <p class="text-[10px] text-gray-400 mt-1 flex items-center gap-1"><i class="far fa-clock"></i> ${n.created_at || ''}</p>
+                    </div>
+                </a>
+            `).join('');
+        })
+        .catch(() => {});
+}
+
+function markRead(id, event) {
+    if (event) event.preventDefault();
+    const link = event ? event.currentTarget.href : null;
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    const headers = {'Content-Type': 'application/json'};
+    if (csrfMeta) headers['X-CSRFToken'] = csrfMeta.content;
+    fetch(`/api/notifications/${id}/read`, {method: 'POST', headers: headers})
+        .finally(() => {
+            if (link && link !== '#' && !link.endsWith('#')) window.location.href = link;
+        });
+}
+
+function markAllRead() {
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    const headers = {'Content-Type': 'application/json'};
+    if (csrfMeta) headers['X-CSRFToken'] = csrfMeta.content;
+    fetch('/api/notifications/read', {method: 'POST', headers: headers})
+        .then(() => {
+            const badge = document.getElementById('notifBadge');
+            if (badge) badge.remove();
+            loadNotifications();
+        }).catch(() => {});
+}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

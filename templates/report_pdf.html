@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<style>
+    @page { size: A4 landscape; margin: 12mm 15mm; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 9pt; color: #1a1a1a; margin: 0; }
+    .header { text-align: center; border-bottom: 3px solid #1e40af; padding-bottom: 10px; margin-bottom: 14px; }
+    .header h1 { font-size: 14pt; margin: 0; color: #1e40af; }
+    .header p { font-size: 9pt; color: #666; margin: 4px 0 0; }
+    .stats { display: flex; gap: 12px; margin-bottom: 14px; }
+    .stat-box { flex: 1; background: #f0f5ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px; text-align: center; }
+    .stat-box .val { font-size: 18pt; font-weight: bold; color: #1e40af; }
+    .stat-box .lbl { font-size: 7.5pt; color: #6b7280; text-transform: uppercase; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #1e40af; color: #fff; font-size: 7.5pt; text-transform: uppercase; padding: 6px 8px; text-align: left; }
+    td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; font-size: 8.5pt; }
+    tr:nth-child(even) td { background: #f9fafb; }
+    .footer { text-align: center; font-size: 7pt; color: #9ca3af; margin-top: 14px; border-top: 1px solid #e5e7eb; padding-top: 6px; }
+    .badge { display: inline-block; padding: 1px 8px; border-radius: 8px; font-size: 7pt; font-weight: bold; }
+    .b-k { background: #fee2e2; color: #dc2626; }
+    .b-m { background: #dcfce7; color: #16a34a; }
+    .b-a { background: #dcfce7; color: #16a34a; }
+    .b-p { background: #fef3c7; color: #d97706; }
+    .b-r { background: #fee2e2; color: #dc2626; }
+</style>
+</head>
+<body>
+<div class="header">
+    <h1>LAPORAN SURAT IZIN KELUAR MASUK BARANG</h1>
+    <p>PT PLN Indonesia Power &mdash; UBP Jawa Tengah 2 Adipala</p>
+</div>
+
+<div class="stats">
+    <div class="stat-box"><div class="val">{{ total_keluar }}</div><div class="lbl">Surat Keluar</div></div>
+    <div class="stat-box"><div class="val">{{ total_masuk }}</div><div class="lbl">Surat Masuk</div></div>
+    <div class="stat-box"><div class="val">{{ total_keluar + total_masuk }}</div><div class="lbl">Total Surat</div></div>
+</div>
+
+<table>
+    <thead>
+        <tr><th>No</th><th>Jenis</th><th>No. Surat</th><th>Tanggal</th><th>Divisi</th><th>Nama</th><th>Perusahaan</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+        {% for r in rows %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td><span class="badge {{ 'b-k' if r.jenis=='keluar' else 'b-m' }}">{{ r.jenis | upper }}</span></td>
+            <td>{{ r.no_surat }}</td>
+            <td>{{ r.tanggal }}</td>
+            <td>{{ r.divisi }}</td>
+            <td>{{ r.nama }}</td>
+            <td>{{ r.perusahaan }}</td>
+            <td><span class="badge {{ 'b-a' if r.status=='approved' else 'b-p' if r.status=='pending' else 'b-r' }}">{{ r.status | upper }}</span></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="footer">Dicetak pada: {{ now.strftime('%d/%m/%Y %H:%M') }} | PT PLN Indonesia Power</div>
+</body>
+</html>

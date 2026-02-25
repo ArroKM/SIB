@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Kelola User - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">Kelola User</h2>
+    <p class="text-gray-500 text-sm mt-1">Manajemen pengguna sistem</p>
+</div>
+<div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <!-- Desktop table -->
+    <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                <tr>
+                    <th class="px-4 py-3 text-left">Username</th>
+                    <th class="px-4 py-3 text-left">Nama Lengkap</th>
+                    <th class="px-4 py-3 text-left">Role</th>
+                    <th class="px-4 py-3 text-left">Divisi</th>
+                    <th class="px-4 py-3 text-left">Status</th>
+                    <th class="px-4 py-3 text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for u in users %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium">{{ u.username }}</td>
+                    <td class="px-4 py-3">{{ u.nama_lengkap }}</td>
+                    <td class="px-4 py-3">
+                        <form method="POST" action="{{ url_for('change_role', uid=u.id) }}" class="inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <select name="role" onchange="this.form.submit()" class="text-xs border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500">
+                                <option value="admin" {{ 'selected' if u.role=='admin' }}>Admin</option>
+                                <option value="user" {{ 'selected' if u.role=='user' }}>User / Pemberi Kerja</option>
+                                <option value="manager" {{ 'selected' if u.role=='manager' }}>Manager</option>
+                                <option value="asman" {{ 'selected' if u.role=='asman' }}>Asman</option>
+                                <option value="satpam" {{ 'selected' if u.role=='satpam' }}>Satpam</option>
+                                <option value="staff" {{ 'selected' if u.role=='staff' }}>Staff</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td class="px-4 py-3 text-gray-500">{{ u.divisi or '-' }}</td>
+                    <td class="px-4 py-3">
+                        {% if u.is_active %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Aktif</span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Non-Aktif</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <a href="{{ url_for('toggle_user', uid=u.id) }}" class="text-xs {{ 'text-red-600 hover:text-red-800' if u.is_active else 'text-green-600 hover:text-green-800' }}">
+                            {{ 'Nonaktifkan' if u.is_active else 'Aktifkan' }}
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- Mobile cards -->
+    <div class="md:hidden divide-y">
+        {% for u in users %}
+        <div class="px-4 py-3">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2 min-w-0">
+                    <div class="bg-blue-600 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">{{ u.nama_lengkap[0] | upper }}</div>
+                    <div class="min-w-0">
+                        <p class="font-semibold text-sm text-gray-800 truncate">{{ u.nama_lengkap }}</p>
+                        <p class="text-xs text-gray-500">@{{ u.username }}</p>
+                    </div>
+                </div>
+                {% if u.is_active %}
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 flex-shrink-0">Aktif</span>
+                {% else %}
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700 flex-shrink-0">Non-Aktif</span>
+                {% endif %}
+            </div>
+            <div class="flex items-center justify-between text-xs text-gray-500">
+                <div class="flex items-center gap-2">
+                    <span>{{ u.divisi or '-' }}</span>
+                    <span>&middot;</span>
+                    <form method="POST" action="{{ url_for('change_role', uid=u.id) }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <select name="role" onchange="this.form.submit()" class="text-[11px] border border-gray-300 rounded px-1 py-0.5 focus:ring-1 focus:ring-blue-500">
+                            <option value="admin" {{ 'selected' if u.role=='admin' }}>Admin</option>
+                            <option value="user" {{ 'selected' if u.role=='user' }}>User / Pemberi Kerja</option>
+                            <option value="manager" {{ 'selected' if u.role=='manager' }}>Manager</option>
+                            <option value="asman" {{ 'selected' if u.role=='asman' }}>Asman</option>
+                            <option value="satpam" {{ 'selected' if u.role=='satpam' }}>Satpam</option>
+                            <option value="staff" {{ 'selected' if u.role=='staff' }}>Staff</option>
+                        </select>
+                    </form>
+                </div>
+                <a href="{{ url_for('toggle_user', uid=u.id) }}" class="text-xs font-medium {{ 'text-red-600' if u.is_active else 'text-green-600' }}">
+                    {{ 'Nonaktifkan' if u.is_active else 'Aktifkan' }}
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - {{ app_name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="h-full bg-gradient-to-br from-blue-800 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-2xl mb-4">
+                <i class="fas fa-box-open text-3xl text-white"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-white">IPIMS</h1>
+            <p class="text-blue-200 text-sm mt-1">Sistem Surat Izin Keluar Masuk Barang</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="mb-4 space-y-2">
+            {% for cat, msg in messages %}
+            <div class="rounded-lg px-4 py-3 text-sm
+                {{ 'bg-green-50 text-green-800' if cat == 'success' else '' }}
+                {{ 'bg-red-50 text-red-800' if cat == 'danger' else '' }}
+                {{ 'bg-yellow-50 text-yellow-800' if cat == 'warning' else '' }}
+                {{ 'bg-blue-50 text-blue-800' if cat == 'info' else '' }}">
+                {{ msg }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="bg-white rounded-2xl shadow-2xl p-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">Masuk ke Akun Anda</h2>
+            <form method="POST" class="space-y-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-user"></i></span>
+                        <input type="text" name="username" required autofocus
+                               class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                               placeholder="Masukkan username">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-lock"></i></span>
+                        <input type="password" name="password" required
+                               class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                               placeholder="Masukkan password">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition shadow-lg shadow-blue-600/30">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login
+                </button>
+            </form>
+            <p class="text-center text-sm text-gray-500 mt-6">
+                Belum punya akun? <a href="{{ url_for('register') }}" class="text-blue-600 hover:underline font-medium">Daftar</a>
+            </p>
+        </div>
+        <p class="text-center text-blue-300 text-xs mt-6">&copy; {{ now.year }} {{ company_name }}</p>
+    </div>
+</body>
+</html>
