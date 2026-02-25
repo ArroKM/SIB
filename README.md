@@ -32,8 +32,8 @@ Sistem informasi pengelolaan surat izin keluar dan masuk barang untuk **PT PLN I
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/qrxs5rycfq-dot/Surat-izin-keluar-masuk-barang.git
-cd Surat-izin-keluar-masuk-barang
+git clone https://github.com/ArroKM/SIB.git
+cd SIB
 
 # 2. Install dependencies
 pip install -r requirements.txt
