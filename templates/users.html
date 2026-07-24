@@ -1,100 +1,841 @@
 {% extends "base.html" %}
 {% block title %}Kelola User - {{ app_name }}{% endblock %}
+{% block page_icon %}fa-users-cog{% endblock %}
+{% block page_title %}Kelola User{% endblock %}
+{% block page_subtitle %}Manajemen pengguna sistem{% endblock %}
+
 {% block content %}
-<div class="mb-6">
-    <h2 class="text-2xl font-bold text-gray-800">Kelola User</h2>
-    <p class="text-gray-500 text-sm mt-1">Manajemen pengguna sistem</p>
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold mb-1">
+            <i class="fas fa-users-cog mr-2 text-emerald-400"></i>
+            Kelola User
+        </h1>
+        <p class="text-gray-400">Manajemen pengguna sistem</p>
+    </div>
+    <button onclick="openAddModal()" class="btn btn-primary">
+        <i class="fas fa-plus mr-2"></i>
+        Tambah User
+    </button>
 </div>
-<div class="bg-white rounded-xl shadow-sm border overflow-hidden">
-    <!-- Desktop table -->
+
+<!-- Tabs Navigation -->
+<div class="mb-6 border-b border-gray-700">
+    <nav class="flex gap-4">
+        <button onclick="switchTab('users')" id="tab-users" class="tab-btn tab-btn-active">
+            <i class="fas fa-users mr-2"></i>Users
+        </button>
+        {% if current_user.role == 'admin' %}
+        <button onclick="switchTab('delegations')" id="tab-delegations" class="tab-btn">
+            <i class="fas fa-user-clock mr-2"></i>Delegasi
+        </button>
+        <button onclick="switchTab('blacklist')" id="tab-blacklist" class="tab-btn">
+            <i class="fas fa-ban mr-2"></i>Blacklist
+        </button>
+        <button onclick="switchTab('api-keys')" id="tab-api-keys" class="tab-btn">
+            <i class="fas fa-key mr-2"></i>API Keys
+        </button>
+        <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn">
+            <i class="fas fa-cog mr-2"></i>Settings
+        </button>
+        {% endif %}
+    </nav>
+</div>
+
+<!-- TAB: USERS -->
+<div id="panel-users" class="tab-panel">
+<!-- Stats Cards -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="card bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <i class="fas fa-users text-blue-400"></i>
+            </div>
+            <div>
+                <p class="text-2xl font-bold">{{ users|length }}</p>
+                <p class="text-xs text-gray-400">Total User</p>
+            </div>
+        </div>
+    </div>
+    <div class="card bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <i class="fas fa-user-check text-green-400"></i>
+            </div>
+            <div>
+                <p class="text-2xl font-bold">{{ users|selectattr('is_active','equalto',1)|list|length }}</p>
+                <p class="text-xs text-gray-400">Aktif</p>
+            </div>
+        </div>
+    </div>
+    <div class="card bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <i class="fas fa-user-times text-red-400"></i>
+            </div>
+            <div>
+                <p class="text-2xl font-bold">{{ users|selectattr('is_active','equalto',0)|list|length }}</p>
+                <p class="text-xs text-gray-400">Non-Aktif</p>
+            </div>
+        </div>
+    </div>
+    <div class="card bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <i class="fas fa-crown text-purple-400"></i>
+            </div>
+            <div>
+                <p class="text-2xl font-bold">{{ users|selectattr('role','equalto','admin')|list|length }}</p>
+                <p class="text-xs text-gray-400">Admin</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="table-container">
+    <div class="table-header">
+        <h3 class="table-title">
+            <i class="fas fa-list mr-2 text-blue-400"></i>
+            Daftar User
+        </h3>
+    </div>
+
+    <!-- Desktop Table -->
     <div class="hidden md:block overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+        <table>
+            <thead>
                 <tr>
-                    <th class="px-4 py-3 text-left">Username</th>
-                    <th class="px-4 py-3 text-left">Nama Lengkap</th>
-                    <th class="px-4 py-3 text-left">Role</th>
-                    <th class="px-4 py-3 text-left">Divisi</th>
-                    <th class="px-4 py-3 text-left">Status</th>
-                    <th class="px-4 py-3 text-center">Aksi</th>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Divisi</th>
+                    <th>Status</th>
+                    <th>Dibuat</th>
+                    <th class="text-center">Aksi</th>
                 </tr>
             </thead>
-            <tbody class="divide-y">
+            <tbody>
                 {% for u in users %}
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3 font-medium">{{ u.username }}</td>
-                    <td class="px-4 py-3">{{ u.nama_lengkap }}</td>
-                    <td class="px-4 py-3">
-                        <form method="POST" action="{{ url_for('change_role', uid=u.id) }}" class="inline">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <select name="role" onchange="this.form.submit()" class="text-xs border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500">
-                                <option value="admin" {{ 'selected' if u.role=='admin' }}>Admin</option>
-                                <option value="user" {{ 'selected' if u.role=='user' }}>User / Pemberi Kerja</option>
-                                <option value="manager" {{ 'selected' if u.role=='manager' }}>Manager</option>
-                                <option value="asman" {{ 'selected' if u.role=='asman' }}>Asman</option>
-                                <option value="satpam" {{ 'selected' if u.role=='satpam' }}>Satpam</option>
-                                <option value="staff" {{ 'selected' if u.role=='staff' }}>Staff</option>
-                            </select>
-                        </form>
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <div class="user-avatar-sm">
+                                {{ u.nama_lengkap[0:2]|upper }}
+                            </div>
+                            <div>
+                                <p class="font-semibold">{{ u.nama_lengkap }}</p>
+                                <p class="text-xs text-gray-500">@{{ u.username }}</p>
+                            </div>
+                        </div>
                     </td>
-                    <td class="px-4 py-3 text-gray-500">{{ u.divisi or '-' }}</td>
-                    <td class="px-4 py-3">
-                        {% if u.is_active %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Aktif</span>
+                    <td>
+                        {% if u.role == 'admin' %}
+                        <span class="badge bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                            <i class="fas fa-crown mr-1"></i>
+                            Admin
+                        </span>
+                        {% elif u.role == 'manager' %}
+                        <span class="badge bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                            <i class="fas fa-user-tie mr-1"></i>
+                            Manager
+                        </span>
+                        {% elif u.role == 'asman' %}
+                        <span class="badge bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                            <i class="fas fa-user mr-1"></i>
+                            Asman
+                        </span>
+                        {% elif u.role == 'satpam' %}
+                        <span class="badge bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            Satpam
+                        </span>
+                        {% elif u.role == 'pemberi_kerja' %}
+                        <span class="badge bg-green-500/20 text-green-400 border border-green-500/30">
+                            <i class="fas fa-briefcase mr-1"></i>
+                            Pemberi Kerja
+                        </span>
+                        {% elif u.role == 'user' %}
+                        <span class="badge bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                            <i class="fas fa-user mr-1"></i>
+                            User
+                        </span>
                         {% else %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Non-Aktif</span>
+                        <span class="badge bg-gray-500/20 text-gray-400 border border-gray-500/30">
+                            {{ u.role|title }}
+                        </span>
                         {% endif %}
                     </td>
-                    <td class="px-4 py-3 text-center">
-                        <a href="{{ url_for('toggle_user', uid=u.id) }}" class="text-xs {{ 'text-red-600 hover:text-red-800' if u.is_active else 'text-green-600 hover:text-green-800' }}">
-                            {{ 'Nonaktifkan' if u.is_active else 'Aktifkan' }}
-                        </a>
+                    <td class="text-gray-400">{{ u.divisi or '-' }}</td>
+                    <td>
+                        {% if u.is_active %}
+                        <span class="badge approved">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            Aktif
+                        </span>
+                        {% else %}
+                        <span class="badge rejected">
+                            <i class="fas fa-times-circle mr-1"></i>
+                            Non-Aktif
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-gray-500 text-sm">
+                        {{ u.created_at.strftime('%d %b %Y') if u.created_at else '-' }}
+                    </td>
+                    <td>
+                        <div class="flex items-center justify-center gap-2">
+                            {% if u.role != 'admin' %}
+                            <!-- Edit Button -->
+                            <button onclick="openEditModal({{ u.id }}, '{{ u.username }}', '{{ u.nama_lengkap }}', '{{ u.divisi or '' }}', '{{ u.role }}')"
+                                    class="btn btn-sm btn-secondary" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+
+                            <!-- Toggle Button -->
+                            <a href="{{ url_for('users.toggle_user', uid=u.id) }}"
+                               class="btn btn-sm {{ 'btn-warning' if u.is_active else 'btn-success' }}"
+                               title="{{ 'Nonaktifkan' if u.is_active else 'Aktifkan' }}">
+                                <i class="fas {{ 'fa-ban' if u.is_active else 'fa-check' }}"></i>
+                            </a>
+
+                            <!-- Delete Button -->
+                            <button onclick="confirmDelete({{ u.id }}, '{{ u.nama_lengkap }}')"
+                                    class="btn btn-sm btn-danger" title="Hapus">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-500/10 px-2 py-1 rounded">
+                                <i class="fas fa-lock"></i>
+                                Proteksi
+                            </span>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    <!-- Mobile cards -->
-    <div class="md:hidden divide-y">
+
+    <!-- Mobile Cards -->
+    <div class="md:hidden divide-y divide-white/5">
         {% for u in users %}
-        <div class="px-4 py-3">
-            <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2 min-w-0">
-                    <div class="bg-blue-600 rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">{{ u.nama_lengkap[0] | upper }}</div>
-                    <div class="min-w-0">
-                        <p class="font-semibold text-sm text-gray-800 truncate">{{ u.nama_lengkap }}</p>
+        <div class="p-4">
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex items-center gap-3">
+                    <div class="user-avatar-sm">
+                        {{ u.nama_lengkap[0:2]|upper }}
+                    </div>
+                    <div>
+                        <p class="font-semibold">{{ u.nama_lengkap }}</p>
                         <p class="text-xs text-gray-500">@{{ u.username }}</p>
                     </div>
                 </div>
                 {% if u.is_active %}
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 flex-shrink-0">Aktif</span>
+                <span class="badge approved text-xs">Aktif</span>
                 {% else %}
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700 flex-shrink-0">Non-Aktif</span>
+                <span class="badge rejected text-xs">Non-Aktif</span>
                 {% endif %}
             </div>
-            <div class="flex items-center justify-between text-xs text-gray-500">
+            <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <span>{{ u.divisi or '-' }}</span>
-                    <span>&middot;</span>
-                    <form method="POST" action="{{ url_for('change_role', uid=u.id) }}" class="inline">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <select name="role" onchange="this.form.submit()" class="text-[11px] border border-gray-300 rounded px-1 py-0.5 focus:ring-1 focus:ring-blue-500">
-                            <option value="admin" {{ 'selected' if u.role=='admin' }}>Admin</option>
-                            <option value="user" {{ 'selected' if u.role=='user' }}>User / Pemberi Kerja</option>
-                            <option value="manager" {{ 'selected' if u.role=='manager' }}>Manager</option>
-                            <option value="asman" {{ 'selected' if u.role=='asman' }}>Asman</option>
-                            <option value="satpam" {{ 'selected' if u.role=='satpam' }}>Satpam</option>
-                            <option value="staff" {{ 'selected' if u.role=='staff' }}>Staff</option>
-                        </select>
-                    </form>
+                    <span class="text-xs text-gray-400">{{ u.divisi or '-' }}</span>
+                    {% if u.role == 'admin' %}
+                    <span class="badge bg-purple-500/20 text-purple-400 text-xs">
+                        <i class="fas fa-crown mr-1"></i>Admin
+                    </span>
+                    {% else %}
+                    <span class="badge bg-gray-500/20 text-gray-400 text-xs">
+                        {{ u.role|title }}
+                    </span>
+                    {% endif %}
                 </div>
-                <a href="{{ url_for('toggle_user', uid=u.id) }}" class="text-xs font-medium {{ 'text-red-600' if u.is_active else 'text-green-600' }}">
-                    {{ 'Nonaktifkan' if u.is_active else 'Aktifkan' }}
-                </a>
+                {% if u.role != 'admin' %}
+                <div class="flex items-center gap-2">
+                    <button onclick="openEditModal({{ u.id }}, '{{ u.username }}', '{{ u.nama_lengkap }}', '{{ u.divisi or '' }}', '{{ u.role }}')"
+                            class="btn btn-sm btn-secondary">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="confirmDelete({{ u.id }}, '{{ u.nama_lengkap }}')"
+                            class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
 </div>
+
+<!-- ============================================ -->
+<!-- ADD USER MODAL -->
+<!-- ============================================ -->
+<div id="addModal" class="modal-overlay">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3 class="text-lg font-semibold flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                    <i class="fas fa-user-plus text-blue-400"></i>
+                </div>
+                Tambah User Baru
+            </h3>
+            <button onclick="closeAddModal()" class="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" action="{{ url_for('users.create_user') }}" id="addUserForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group md:col-span-2">
+                        <label class="form-label">
+                            <i class="fas fa-id-card mr-1 text-blue-400"></i>
+                            Nama Lengkap <span class="text-red-400">*</span>
+                        </label>
+                        <input type="text" name="nama_lengkap" id="add_nama_lengkap" required
+                               class="form-input" placeholder="Contoh: John Doe" minlength="2">
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Username akan dibuat otomatis dari nama lengkap
+                        </p>
+                    </div>
+
+                    <!-- Username Preview (Auto-generated) -->
+                    <div class="form-group md:col-span-2">
+                        <label class="form-label">
+                            <i class="fas fa-at mr-1 text-gray-400"></i>
+                            Username (Auto)
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 px-4 py-2 bg-gray-500/10 border border-gray-500/20 rounded-lg text-gray-400" id="usernamePreview">
+                                Ketik nama lengkap untuk melihat preview...
+                            </div>
+                            <button type="button" onclick="generateUsernamePreview()" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-key mr-1 text-blue-400"></i>
+                            Password <span class="text-red-400">*</span>
+                        </label>
+                        <input type="password" name="password" required
+                               class="form-input" placeholder="Min 6 karakter" minlength="6">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-shield-alt mr-1 text-blue-400"></i>
+                            Role <span class="text-red-400">*</span>
+                        </label>
+                        <select name="role" required class="form-select">
+                            <option value="user">User / Staff</option>
+                            <option value="pemberi_kerja">Pemberi Kerja (Vendor)</option>
+                            <option value="satpam">Satpam</option>
+                            <option value="asman">Asman Umum</option>
+                            <option value="manager">Manager</option>
+                            <option value="staff">Staff</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group md:col-span-2">
+                        <label class="form-label">
+                            <i class="fas fa-building mr-1 text-blue-400"></i>
+                            Divisi
+                        </label>
+                        <select name="divisi" class="form-select">
+                            <option value="">-- Pilih Divisi --</option>
+                            <option value="PEMELIHARAAN">PEMELIHARAAN</option>
+                            <option value="OPERASI">OPERASI</option>
+                            <option value="TEKNIK">TEKNIK</option>
+                            <option value="UMUM">UMUM</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeAddModal()" class="btn btn-secondary">
+                    <i class="fas fa-times mr-2"></i>
+                    Batal
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus mr-2"></i>
+                    Tambah User
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- EDIT USER MODAL -->
+<!-- ============================================ -->
+<div id="editModal" class="modal-overlay">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3 class="text-lg font-semibold flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+                    <i class="fas fa-user-edit text-yellow-400"></i>
+                </div>
+                Edit User
+            </h3>
+            <button onclick="closeEditModal()" class="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" id="editForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-body">
+                <!-- Username Display (Read-only) -->
+                <div class="form-group mb-6">
+                    <label class="form-label">
+                        <i class="fas fa-at mr-1 text-gray-400"></i>
+                        Username
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 px-4 py-2 bg-gray-500/10 border border-gray-500/20 rounded-lg text-gray-400" id="edit_username_display">
+                            <i class="fas fa-lock mr-2"></i>
+                            Username tidak dapat diubah
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-id-card mr-1 text-yellow-400"></i>
+                            Nama Lengkap <span class="text-red-400">*</span>
+                        </label>
+                        <input type="text" name="nama_lengkap" id="edit_nama_lengkap" required
+                               class="form-input" placeholder="Nama lengkap" minlength="2">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-shield-alt mr-1 text-yellow-400"></i>
+                            Role
+                        </label>
+                        <select name="role" id="edit_role" class="form-select">
+                            <option value="user">User / Pemberi Kerja</option>
+                            <option value="staff">Staff</option>
+                            <option value="satpam">Satpam</option>
+                            <option value="asman">Asman</option>
+                            <option value="manager">Manager</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group md:col-span-2">
+                        <label class="form-label">
+                            <i class="fas fa-building mr-1 text-yellow-400"></i>
+                            Divisi
+                        </label>
+                        <select name="divisi" id="edit_divisi" class="form-select">
+                            <option value="">-- Pilih Divisi --</option>
+                            <option value="PEMELIHARAAN">PEMELIHARAAN</option>
+                            <option value="OPERASI">OPERASI</option>
+                            <option value="TEKNIK">TEKNIK</option>
+                            <option value="UMUM">UMUM</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Password Reset Section -->
+                <div class="mt-6 p-4 bg-gray-500/10 rounded-lg border border-gray-500/20">
+                    <h4 class="font-semibold text-sm mb-3 flex items-center gap-2">
+                        <i class="fas fa-key text-gray-400"></i>
+                        Reset Password (Opsional)
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group mb-0">
+                            <label class="form-label text-sm">Password Baru</label>
+                            <input type="password" name="password_baru"
+                                   class="form-input" placeholder="Kosongkan jika tidak diubah" minlength="6">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label text-sm">Konfirmasi Password</label>
+                            <input type="password" name="password_konfirmasi"
+                                   class="form-input" placeholder="Ulangi password baru" minlength="6">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+                    <i class="fas fa-times mr-2"></i>
+                    Batal
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-2"></i>
+                    Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- DELETE CONFIRMATION MODAL -->
+<!-- ============================================ -->
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="text-lg font-semibold flex items-center gap-2 text-red-400">
+                <div class="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                Konfirmasi Hapus
+            </h3>
+            <button onclick="closeDeleteModal()" class="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="text-gray-300 mb-4">Apakah Anda yakin ingin menghapus user ini?</p>
+            <div class="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <i class="fas fa-user-slash text-red-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-white" id="deleteUserName"></p>
+                        <p class="text-sm text-gray-400">User dan semua data terkait akan dihapus permanen</p>
+                    </div>
+                </div>
+            </div>
+            <p class="text-xs text-red-400 mt-4 flex items-center gap-1">
+                <i class="fas fa-exclamation-circle"></i>
+                Tindakan ini tidak dapat dibatalkan!
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" onclick="closeDeleteModal()" class="btn btn-secondary">
+                <i class="fas fa-times mr-2"></i>
+                Batal
+            </button>
+            <form method="POST" id="deleteForm" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash mr-2"></i>
+                    Ya, Hapus
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ============================================
+// ADD MODAL
+// ============================================
+function openAddModal() {
+    document.getElementById('addModal').classList.add('active');
+}
+
+function closeAddModal() {
+    document.getElementById('addModal').classList.remove('active');
+    document.getElementById('addModal').querySelector('form').reset();
+    document.getElementById('usernamePreview').textContent = 'Ketik nama lengkap untuk melihat preview...';
+    document.getElementById('usernamePreview').classList.remove('text-green-400', 'text-blue-400');
+    document.getElementById('usernamePreview').classList.add('text-gray-400');
+}
+
+// Generate username preview from name
+function generateUsernamePreview() {
+    const nama = document.getElementById('add_nama_lengkap').value.trim();
+    if (!nama) {
+        document.getElementById('usernamePreview').textContent = 'Ketik nama lengkap untuk melihat preview...';
+        document.getElementById('usernamePreview').classList.remove('text-green-400', 'text-blue-400');
+        document.getElementById('usernamePreview').classList.add('text-gray-400');
+        return;
+    }
+
+    // Clean and convert to username format
+    let username = nama.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '') // remove special chars
+        .replace(/\s+/g, '_') // replace spaces with underscore
+        .substring(0, 20); // max 20 chars
+
+    if (username.length < 3) {
+        username = 'user_' + username;
+    }
+
+    // Show preview
+    document.getElementById('usernamePreview').textContent = '@' + username + '*** (akan dicek uniqueness saat disimpan)';
+    document.getElementById('usernamePreview').classList.remove('text-gray-400');
+    document.getElementById('usernamePreview').classList.add('text-blue-400');
+}
+
+// Auto-generate preview when typing
+document.getElementById('add_nama_lengkap')?.addEventListener('input', function() {
+    generateUsernamePreview();
+});
+
+// ============================================
+// EDIT MODAL
+// ============================================
+function openEditModal(id, username, nama_lengkap, divisi, role) {
+    document.getElementById('edit_username_display').innerHTML = '<i class="fas fa-user mr-2"></i>@' + username;
+    document.getElementById('edit_username_display').classList.remove('text-gray-400');
+    document.getElementById('edit_username_display').classList.add('text-white', 'font-mono');
+    document.getElementById('edit_nama_lengkap').value = nama_lengkap;
+    document.getElementById('edit_divisi').value = divisi || '';
+    document.getElementById('edit_role').value = role;
+    document.getElementById('editForm').action = '/users/' + id + '/edit';
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+    document.getElementById('editForm').reset();
+    document.getElementById('edit_username_display').innerHTML = '<i class="fas fa-lock mr-2"></i>Username tidak dapat diubah';
+    document.getElementById('edit_username_display').classList.add('text-gray-400');
+    document.getElementById('edit_username_display').classList.remove('text-white', 'font-mono');
+}
+
+// ============================================
+// DELETE MODAL
+// ============================================
+function confirmDelete(userId, userName) {
+    document.getElementById('deleteUserName').textContent = userName;
+    document.getElementById('deleteForm').action = '/users/' + userId + '/delete';
+    document.getElementById('deleteModal').classList.add('active');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+}
+
+// ============================================
+// CLOSE ON OUTSIDE CLICK
+// ============================================
+document.getElementById('addModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeAddModal();
+});
+
+document.getElementById('editModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+
+document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+
+// ============================================
+// TABS FUNCTIONALITY
+// ============================================
+function switchTab(tabName) {
+    // Hide all panels
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+    // Deactivate all tabs
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('tab-btn-active'));
+    // Show selected panel
+    document.getElementById('panel-' + tabName)?.classList.remove('hidden');
+    // Activate selected tab
+    document.getElementById('tab-' + tabName)?.classList.add('tab-btn-active');
+
+    // Load data for specific tabs
+    if (tabName === 'delegations') loadDelegations();
+    if (tabName === 'blacklist') loadBlacklist();
+    if (tabName === 'api-keys') loadApiKeys();
+    if (tabName === 'settings') loadSettings();
+}
+
+// ============================================
+// DELEGATION FUNCTIONS
+// ============================================
+function openDelegationModal() {
+    document.getElementById('delegationModal').classList.add('active');
+    document.getElementById('delegation_start').value = new Date().toISOString().split('T')[0];
+}
+
+function closeDelegationModal() {
+    document.getElementById('delegationModal').classList.remove('active');
+    document.getElementById('delegationForm').reset();
+}
+
+async function loadDelegations() {
+    try {
+        const res = await fetch('/api/delegations');
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message);
+
+        const container = document.getElementById('delegation-list');
+        if (!data.outgoing.length && !data.incoming.length) {
+            container.innerHTML = '<p class="text-center text-gray-500 py-8"><i class="fas fa-user-clock text-4xl mb-3 block"></i>Belum ada delegasi aktif</p>';
+            return;
+        }
+
+        let html = '';
+        if (data.outgoing.length) {
+            html += '<h4 class="font-semibold text-sm text-gray-400 mb-2">Saya Mendelegasikan:</h4>';
+            data.outgoing.forEach(d => {
+                html += '<div class="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 flex items-center justify-between mb-2"><div><p class="font-semibold">' + d.delegate_name + '</p><p class="text-sm text-gray-400">' + d.stages.join(', ') + ' | ' + d.start_date + ' - ' + d.end_date + '</p></div><button onclick="revokeDelegation(' + d.id + ')" class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button></div>';
+            });
+        }
+        if (data.incoming.length) {
+            html += '<h4 class="font-semibold text-sm text-gray-400 mb-2 mt-4">Mendelegasi Kepada Saya:</h4>';
+            data.incoming.forEach(d => {
+                html += '<div class="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mb-2"><p class="font-semibold">' + d.delegator_name + '</p><p class="text-sm text-gray-400">' + d.stages.join(', ') + ' | ' + d.start_date + ' - ' + d.end_date + '</p></div>';
+            });
+        }
+        container.innerHTML = html;
+    } catch (e) {
+        document.getElementById('delegation-list').innerHTML = '<p class="text-red-400 text-center py-4">Gagal memuat</p>';
+    }
+}
+
+async function revokeDelegation(id) {
+    if (!confirm('Batalkan delegasi ini?')) return;
+    try {
+        const res = await fetch('/api/delegations/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) { loadDelegations(); }
+    } catch (e) {}
+}
+
+document.getElementById('delegationForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = new FormData(this);
+    const stages = form.getAll('stages');
+    if (!stages.length) { alert('Pilih minimal 1 stage'); return; }
+
+    try {
+        const res = await fetch('/api/delegations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                delegate_id: form.get('delegate_id'),
+                stages: stages,
+                start_date: form.get('start_date'),
+                end_date: form.get('end_date'),
+                reason: form.get('reason')
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            closeDelegationModal();
+            loadDelegations();
+        }
+    } catch (e) {}
+});
+
+// ============================================
+// BLACKLIST FUNCTIONS
+// ============================================
+function openBlacklistModal() { document.getElementById('blacklistModal').classList.add('active'); }
+function closeBlacklistModal() { document.getElementById('blacklistModal').classList.remove('active'); document.getElementById('blacklistForm').reset(); }
+
+async function loadBlacklist() {
+    try {
+        const res = await fetch('/api/blacklist');
+        const data = await res.json();
+        const container = document.getElementById('blacklist-list');
+        if (!data.items.length) {
+            container.innerHTML = '<p class="text-center text-gray-500 py-8"><i class="fas fa-ban text-4xl mb-3 block"></i>Belum ada item blacklist</p>';
+            return;
+        }
+        container.innerHTML = data.items.map(item => '<div class="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-2"><p class="font-semibold">' + item.item_name + '</p><p class="text-sm text-gray-400">' + (item.reason || '-') + '</p></div>').join('');
+    } catch (e) {}
+}
+
+document.getElementById('blacklistForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = new FormData(this);
+    try {
+        const res = await fetch('/api/blacklist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item_name: form.get('item_name'), pattern: form.get('pattern'), reason: form.get('reason') })
+        });
+        const data = await res.json();
+        if (data.success) { closeBlacklistModal(); loadBlacklist(); }
+    } catch (e) {}
+});
+
+// ============================================
+// API KEYS FUNCTIONS
+// ============================================
+function openApiKeyModal() { document.getElementById('apiKeyModal').classList.add('active'); }
+function closeApiKeyModal() { document.getElementById('apiKeyModal').classList.remove('active'); document.getElementById('apiKeyForm').reset(); }
+
+async function loadApiKeys() {
+    try {
+        const res = await fetch('/api/v1/keys');
+        const data = await res.json();
+        const container = document.getElementById('apikey-list');
+        if (!data.keys.length) {
+            container.innerHTML = '<p class="text-center text-gray-500 py-8"><i class="fas fa-key text-4xl mb-3 block"></i>Belum ada API key</p>';
+            return;
+        }
+        container.innerHTML = data.keys.map(key => '<div class="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-4 mb-2 flex items-center justify-between"><div><p class="font-semibold">' + key.client_name + '</p><p class="text-sm text-gray-400">' + (key.description || '-') + '</p></div><button onclick="revokeApiKey(' + key.id + ')" class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button></div>').join('');
+    } catch (e) {}
+}
+
+async function revokeApiKey(id) {
+    if (!confirm('Revoke API key ini?')) return;
+    try {
+        const res = await fetch('/api/v1/keys/' + id, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) loadApiKeys();
+    } catch (e) {}
+}
+
+document.getElementById('apiKeyForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = new FormData(this);
+    try {
+        const res = await fetch('/api/v1/keys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client_name: form.get('client_name'), description: form.get('description') })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('API Key: ' + data.api_key);
+            closeApiKeyModal();
+            loadApiKeys();
+        }
+    } catch (e) {}
+});
+
+// ============================================
+// SETTINGS FUNCTIONS
+// ============================================
+async function loadSettings() {
+    try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        const container = document.getElementById('settings-list');
+        if (!data.settings.length) {
+            container.innerHTML = '<p class="text-center text-gray-500 py-8">Tidak ada pengaturan</p>';
+            return;
+        }
+        container.innerHTML = data.settings.map(s => '<div class="bg-gray-500/10 rounded-lg p-4 mb-2 flex items-center justify-between"><div><p class="font-semibold">' + s.setting_key + '</p><p class="text-sm text-gray-400">' + (s.description || '-') + '</p></div><div class="flex items-center gap-2"><input type="text" class="form-input w-40 text-sm" value="' + s.setting_value + '" id="setting_' + s.setting_key + '"><button onclick="updateSetting(\'' + s.setting_key + '\')" class="btn btn-sm btn-primary"><i class="fas fa-save"></i></button></div></div>').join('');
+    } catch (e) {}
+}
+
+async function updateSetting(key) {
+    const value = document.getElementById('setting_' + key).value;
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key, value })
+        });
+        const data = await res.json();
+        alert(data.success ? 'Disimpan' : 'Gagal');
+    } catch (e) {}
+}
+
+// Add CSS for tabs
+const style = document.createElement('style');
+style.textContent = '.tab-btn { padding: 8px 16px; border-bottom: 2px solid transparent; color: #94a3b8; cursor: pointer; transition: all 0.2s; } .tab-btn:hover { color: #e2e8f0; } .tab-btn-active { color: #3b82f6; border-bottom-color: #3b82f6; }';
+document.head.appendChild(style);
+</script>
 {% endblock %}

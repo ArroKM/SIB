@@ -1,287 +1,1151 @@
 {% extends "base.html" %}
 {% block title %}Buat Surat Izin - {{ app_name }}{% endblock %}
+{% block page_icon %}fa-plus-circle{% endblock %}
+{% block page_title %}Buat Surat{% endblock %}
+{% block page_subtitle %}Buat surat izin keluar masuk barang{% endblock %}
 
 {% block content %}
+<!-- Page Header -->
 <div class="mb-6">
-    <h2 class="text-2xl font-bold text-gray-800">
-        <i class="fas fa-plus-circle text-blue-500 mr-2"></i>
-        Buat Surat Izin Barang
-    </h2>
-    <p class="text-gray-500 text-sm mt-1">Isi formulir berikut untuk membuat surat izin baru</p>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold mb-1">
+                <i class="fas fa-file-plus mr-2 text-blue-400"></i>
+                Buat Surat Izin Barang
+            </h1>
+            <p class="text-gray-400">Isi formulir berikut untuk membuat surat izin baru</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="openDraftModal()" class="btn btn-secondary" id="draftBtn" style="display: none;">
+                <i class="fas fa-history mr-2"></i>
+                Lihat Draft
+            </button>
+            <button type="button" onclick="openPreviewModal()" class="btn btn-primary">
+                <i class="fas fa-eye mr-2"></i>
+                Preview
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Auto-save indicator -->
+<div id="autosaveIndicator" class="fixed bottom-4 right-4 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 shadow-lg flex items-center gap-2 transition-all duration-300 opacity-0 transform translate-y-2 z-50">
+    <div class="animate-spin">
+        <i class="fas fa-spinner text-blue-400"></i>
+    </div>
+    <span class="text-sm text-gray-300">Menyimpan draft...</span>
 </div>
 
 <form method="POST" enctype="multipart/form-data" id="suratForm" class="space-y-6">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="auto_fill" id="autoFillData" value="">
 
     <!-- Info Surat -->
-    <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
-        <h3 class="font-semibold text-gray-700 mb-4 flex items-center gap-2"><i class="fas fa-file-alt text-blue-500"></i> Informasi Surat</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Surat <span class="text-red-500">*</span></label>
-                <select name="jenis" id="jenisSelect" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="keluar" {{ 'selected' if jenis=='keluar' }}>Surat Keluar</option>
-                    <option value="masuk" {{ 'selected' if jenis=='masuk' }}>Surat Masuk</option>
+    <div class="card">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold flex items-center gap-2">
+                <i class="fas fa-file-alt text-blue-400"></i>
+                Informasi Surat
+            </h3>
+            <button type="button" onclick="autoFillFromProfile()" class="btn btn-secondary btn-sm">
+                <i class="fas fa-magic mr-1"></i>
+                Auto-Fill
+            </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="form-group">
+                <label class="form-label">Jenis Surat <span class="text-red-400">*</span></label>
+                <select name="jenis" id="jenisSelect" required class="form-select">
+                    <option value="keluar" {{ 'selected' if jenis=='keluar' }}>📤 Surat Keluar</option>
+                    <option value="masuk" {{ 'selected' if jenis=='masuk' }}>📥 Surat Masuk</option>
                 </select>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">No. Surat <span class="text-red-500">*</span></label>
-                <input type="text" name="no_surat" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Contoh: 3783.SJ/07/ADPPGU/2023">
+            <div class="form-group">
+                <label class="form-label">
+                    No. Surat <span class="text-red-400">*</span>
+                    <button type="button" onclick="generateNoSurat()" class="ml-2 text-blue-400 hover:text-blue-300 text-xs">
+                        <i class="fas fa-sync-alt mr-1"></i>Generate
+                    </button>
+                </label>
+                <div class="relative">
+                    <input type="text" name="no_surat" id="noSurat" required class="form-input pr-20" placeholder="YYYYMMDD-XXXX">
+                    <div id="noSuratStatus" class="absolute right-3 top-1/2 -translate-y-1/2">
+                        <!-- Status icon will appear here -->
+                    </div>
+                </div>
+                <p id="noSuratError" class="text-xs text-red-400 mt-1 hidden"></p>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal <span class="text-red-500">*</span></label>
-                <input type="date" name="tanggal" value="{{ date_now }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <div class="form-group">
+                <label class="form-label">Tanggal <span class="text-red-400">*</span></label>
+                <div class="date-input-wrapper">
+                    <input type="date" name="tanggal" id="tanggalSurat" value="{{ date_now }}" required class="form-input">
+                    <i class="fas fa-calendar-alt date-icon"></i>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Tgl. Terbit Dokumen <span class="text-red-500">*</span></label>
-                <input type="date" name="tgl_terbit" value="{{ date_now }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <div class="form-group">
+                <label class="form-label">Tgl. Terbit Dokumen <span class="text-red-400">*</span></label>
+                <div class="date-input-wrapper">
+                    <input type="date" name="tgl_terbit" id="tglTerbit" value="{{ date_now }}" required class="form-input">
+                    <i class="fas fa-calendar-alt date-icon"></i>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Divisi <span class="text-red-500">*</span></label>
-                <select name="divisi" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <div class="form-group">
+                <label class="form-label">Divisi <span class="text-red-400">*</span></label>
+                <select name="divisi" id="divisiSelect" required class="form-select">
+                    <option value="">-- Pilih Divisi --</option>
                     <option value="PEMELIHARAAN">PEMELIHARAAN</option>
                     <option value="OPERASI">OPERASI</option>
                     <option value="TEKNIK">TEKNIK</option>
                     <option value="UMUM">UMUM</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label class="form-label">Urgensi <span class="text-red-400">*</span></label>
+                <select name="urgency" id="urgencySelect" required class="form-select" onchange="updateApprovalChainInfo()">
+                    <option value="normal">Normal (Tanpa Asman)</option>
+                    <option value="urgent">Urgent (Manager Only)</option>
+                    <option value="full">Full (Semua Tahap)</option>
+                </select>
+            </div>
+        </div>
+        <div id="approvalChainInfo" class="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <h4 class="text-sm font-semibold flex items-center gap-2 mb-2">
+                <i class="fas fa-route text-blue-400"></i>
+                Alur Approval
+            </h4>
+            <p class="text-sm text-gray-400" id="approvalChainText">Normal: User → Satpam → Manager (Tanpa Asman)</p>
         </div>
     </div>
 
     <!-- Data Pemohon -->
-    <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
-        <h3 class="font-semibold text-gray-700 mb-4 flex items-center gap-2"><i class="fas fa-user text-blue-500"></i> Data Pemohon</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nama <span class="text-red-500">*</span></label>
-                <input type="text" name="nama" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+    <div class="card">
+        <h3 class="font-semibold mb-4 flex items-center gap-2">
+            <i class="fas fa-user text-blue-400"></i>
+            Data Pemohon
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="form-group">
+                <label class="form-label">Nama <span class="text-red-400">*</span></label>
+                <input type="text" name="nama" id="namaPemohon" required class="form-input" placeholder="Nama lengkap pemohon">
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Foto KTP / Identitas</label>
-                <input type="file" name="foto_ktp" accept="image/*" class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            <div class="form-group">
+                <label class="form-label">Badge / ID <span class="text-red-400">*</span></label>
+                <input type="text" name="badge" id="badgeId" required class="form-input" placeholder="Contoh: BDG-001">
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Badge <span class="text-red-500">*</span></label>
-                <input type="text" name="badge" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <div class="form-group">
+                <label class="form-label">Perusahaan <span class="text-red-400">*</span></label>
+                <div class="relative">
+                    <input type="text" name="perusahaan" id="perusahaanInput" required class="form-input" placeholder="Ketik untuk cari..." autocomplete="off">
+                    <div id="companyDropdown" class="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl hidden max-h-48 overflow-y-auto">
+                        <!-- Suggestions will appear here -->
+                    </div>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Perusahaan <span class="text-red-500">*</span></label>
-                <input type="text" name="perusahaan" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <div class="form-group">
+                <label class="form-label">No. Kendaraan <span class="text-red-400">*</span></label>
+                <input type="text" name="no_kendaraan" id="noKendaraan" required class="form-input" placeholder="Contoh: B 1234 XYZ">
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">No. Kendaraan <span class="text-red-500">*</span></label>
-                <input type="text" name="no_kendaraan" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <div class="form-group">
+                <label class="form-label">No. SPK/MEMO <span class="text-red-400">*</span></label>
+                <input type="text" name="no_spk" id="noSpk" required class="form-input" placeholder="Nomor SPK atau MEMO">
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">No. SPK/MEMO <span class="text-red-500">*</span></label>
-                <input type="text" name="no_spk" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <div class="form-group">
+                <label class="form-label">Foto KTP / Identitas</label>
+                <div class="file-input-wrapper">
+                    <label class="file-input-custom">
+                        <input type="file" name="foto_ktp" accept="image/*" onchange="handleFileSelect(this, 'fotoKtpPreview')">
+                        <div class="file-input-icon">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <div class="file-input-content" id="fotoKtpPreview">
+                            <div class="title">Klik atau drag file ke sini</div>
+                            <div class="subtitle">Format: JPG, PNG (Max 2MB)</div>
+                        </div>
+                    </label>
+                </div>
             </div>
-            <div class="sm:col-span-2 md:col-span-3">
-                <label class="block text-sm font-medium text-gray-700 mb-1">File SPK / Lampiran Dokumen</label>
-                <input type="file" name="file_spk" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
-                <p class="text-xs text-gray-400 mt-1">Format: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG</p>
+            <div class="form-group md:col-span-2">
+                <label class="form-label">File SPK / Lampiran</label>
+                <div class="file-input-wrapper">
+                    <label class="file-input-custom">
+                        <input type="file" name="file_spk" accept=".pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelect(this, 'fileSpkPreview')">
+                        <div class="file-input-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="file-input-content" id="fileSpkPreview">
+                            <div class="title">Klik atau drag file ke sini</div>
+                            <div class="subtitle">Format: PDF, DOC, DOCX, XLS, XLSX (Max 10MB)</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tanda Tangan & Alur Persetujuan -->
+    <div class="card">
+        <h3 class="font-semibold mb-4 flex items-center gap-2">
+            <i class="fas fa-signature text-blue-400"></i>
+            Tanda Tangan & Alur Persetujuan
+        </h3>
+        <div class="mb-4">
+            <label class="form-label">Pemohon <span class="text-red-400">*</span></label>
+            <input type="text" name="pemohon" required class="form-input" placeholder="Nama pemohon">
+        </div>
+        <input type="hidden" name="diperiksa_oleh" value="(Via Sistem Approval)">
+        <input type="hidden" name="disetujui_oleh" value="(Via Sistem Approval)">
+        <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+            <p class="text-sm font-medium text-blue-400 mb-3">
+                <i class="fas fa-info-circle mr-2"></i>
+                Alur persetujuan otomatis setelah surat dibuat:
+            </p>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 text-sm flex-wrap">
+                <div class="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 border border-white/20">
+                    <span class="w-7 h-7 rounded-full bg-white/20 text-white text-xs flex items-center justify-center font-bold">1</span>
+                    <span class="text-gray-300 font-medium">User / Pemberi Kerja</span>
+                </div>
+                <i class="fas fa-arrow-right text-blue-400 hidden sm:block"></i>
+                <i class="fas fa-arrow-down text-blue-400 sm:hidden"></i>
+                <div class="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 border border-white/20">
+                    <span class="w-7 h-7 rounded-full bg-orange-500/30 text-orange-400 text-xs flex items-center justify-center font-bold">2</span>
+                    <span class="text-gray-300 font-medium">Satpam</span>
+                </div>
+                <i class="fas fa-arrow-right text-blue-400 hidden sm:block"></i>
+                <i class="fas fa-arrow-down text-blue-400 sm:hidden"></i>
+                <div class="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 border border-white/20">
+                    <span class="w-7 h-7 rounded-full bg-blue-500/30 text-blue-400 text-xs flex items-center justify-center font-bold">3</span>
+                    <span class="text-gray-300 font-medium">Asman Umum</span>
+                </div>
+                <i class="fas fa-arrow-right text-blue-400 hidden sm:block"></i>
+                <i class="fas fa-arrow-down text-blue-400 sm:hidden"></i>
+                <div class="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 border border-white/20">
+                    <span class="w-7 h-7 rounded-full bg-emerald-500/30 text-emerald-400 text-xs flex items-center justify-center font-bold">4</span>
+                    <span class="text-gray-300 font-medium">Manager Administrasi</span>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Daftar Barang -->
-    <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="font-semibold text-gray-700 flex items-center gap-2"><i class="fas fa-boxes text-blue-500"></i> Daftar Barang</h3>
-            <button type="button" onclick="addRow()" class="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition">
-                <i class="fas fa-plus"></i> Tambah
-            </button>
+    <div class="card">
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-violet-500/20 flex items-center justify-center">
+                    <i class="fas fa-boxes text-blue-400"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg">Daftar Barang</h3>
+                    <p class="text-xs text-gray-500">Tambahkan barang yang akan diizinkan</p>
+                </div>
+                <span id="barangCount" class="ml-2 bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-bold">0 item</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="openTemplateModal()" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-layer-group mr-1"></i>
+                    Template
+                </button>
+                <button type="button" onclick="addRow()" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus mr-1"></i>
+                    Tambah
+                </button>
+            </div>
         </div>
-        <!-- Desktop table -->
-        <div class="hidden sm:block overflow-x-auto">
-            <table class="w-full text-sm" id="barangTable">
-                <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+
+        <!-- Desktop Table -->
+        <div class="barang-table-container hidden md:block mb-4">
+            <table class="barang-table" id="barangTable">
+                <thead>
                     <tr>
-                        <th class="px-3 py-2 text-left w-10">No</th>
-                        <th class="px-3 py-2 text-left">Nama Barang</th>
-                        <th class="px-3 py-2 text-left w-24">Jumlah</th>
-                        <th class="px-3 py-2 text-left w-28">Satuan</th>
-                        <th class="px-3 py-2 text-left">Keterangan</th>
-                        <th class="px-3 py-2 text-left w-32">Foto Barang</th>
-                        <th class="px-3 py-2 w-12"></th>
+                        <th class="w-14">No</th>
+                        <th class="min-w-[180px]">Nama Barang</th>
+                        <th class="w-20 text-center">Jumlah</th>
+                        <th class="w-28 text-center">Satuan</th>
+                        <th class="min-w-[280px]">Keterangan</th>
+                        <th class="w-36 text-center">Foto</th>
+                        <th class="w-14 text-center">Aksi</th>
                     </tr>
                 </thead>
-                <tbody id="barangBody"></tbody>
+                <tbody id="barangBody">
+                    <tr class="barang-row">
+                        <td class="text-center">
+                            <span class="row-number">1</span>
+                        </td>
+                        <td>
+                            <input type="text" class="table-input bn" placeholder="Nama barang" required>
+                        </td>
+                        <td>
+                            <input type="number" class="table-input table-input-number bj" value="1" min="1" required>
+                        </td>
+                        <td>
+                            <select class="table-select bs">
+                                <option value="Unit">Unit</option>
+                                <option value="Set">Set</option>
+                                <option value="Pcs">Pcs</option>
+                                <option value="Dus">Dus</option>
+                                <option value="Lembar">Lembar</option>
+                                <option value="Roll">Roll</option>
+                                <option value="Kg">Kg</option>
+                                <option value="Liter">Liter</option>
+                                <option value="Meter">Meter</option>
+                                <option value="Box">Box</option>
+                            </select>
+                        </td>
+                        <td class="keterangan-cell">
+                            <input type="text" class="table-input table-input-keterangan bk" placeholder="Keterangan tambahan...">
+                        </td>
+                        <td class="text-center">
+                            <div class="barang-file-wrapper">
+                                <label class="barang-file-btn">
+                                    <input type="file" class="file-foto-barang" name="foto_barang_0" accept="image/*" multiple>
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Pilih File</span>
+                                </label>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <button type="button" onclick="removeRow(this)" class="delete-btn" title="Hapus">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
             </table>
         </div>
-        <!-- Mobile stacked -->
-        <div id="barangMobile" class="sm:hidden space-y-3"></div>
+
+        <!-- Mobile Cards -->
+        <div id="barangMobile" class="md:hidden barang-mobile-cards space-y-3"></div>
+
+        <!-- Empty State -->
+        <div id="emptyBarangState" class="hidden text-center py-12">
+            <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500/20 to-violet-500/20 flex items-center justify-center">
+                <i class="fas fa-boxes text-gray-400 text-3xl"></i>
+            </div>
+            <p class="text-gray-400 mb-6">Belum ada barang ditambahkan</p>
+            <button type="button" onclick="addRow()" class="btn btn-primary">
+                <i class="fas fa-plus mr-2"></i>
+                Tambah Barang
+            </button>
+        </div>
+
+        <!-- Hidden field for JSON -->
         <input type="hidden" name="barang_items" id="barangItems">
     </div>
 
-    <!-- Tanda Tangan & Alur Persetujuan -->
-    <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
-        <h3 class="font-semibold text-gray-700 mb-4 flex items-center gap-2"><i class="fas fa-signature text-blue-500"></i> Tanda Tangan & Alur Persetujuan</h3>
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Pemohon <span class="text-red-500">*</span></label>
-            <input type="text" name="pemohon" required class="w-full sm:w-1/3 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Nama pemohon">
-        </div>
-        <input type="hidden" name="diperiksa_oleh" value="(Via Sistem Approval)">
-        <input type="hidden" name="disetujui_oleh" value="(Via Sistem Approval)">
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p class="text-sm font-medium text-blue-700 mb-3"><i class="fas fa-info-circle mr-1"></i> Alur persetujuan otomatis setelah surat dibuat:</p>
-            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-0 text-sm">
-                <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border shadow-sm">
-                    <span class="w-6 h-6 rounded-full bg-gray-200 text-gray-600 text-xs flex items-center justify-center font-bold">1</span>
-                    <span class="text-gray-700 font-medium">User / Pemberi Kerja</span>
-                </div>
-                <i class="fas fa-arrow-right text-blue-300 hidden sm:block mx-2"></i>
-                <i class="fas fa-arrow-down text-blue-300 sm:hidden ml-3"></i>
-                <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border shadow-sm">
-                    <span class="w-6 h-6 rounded-full bg-orange-200 text-orange-600 text-xs flex items-center justify-center font-bold">2</span>
-                    <span class="text-gray-700 font-medium">Satpam</span>
-                </div>
-                <i class="fas fa-arrow-right text-blue-300 hidden sm:block mx-2"></i>
-                <i class="fas fa-arrow-down text-blue-300 sm:hidden ml-3"></i>
-                <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border shadow-sm">
-                    <span class="w-6 h-6 rounded-full bg-blue-200 text-blue-600 text-xs flex items-center justify-center font-bold">3</span>
-                    <span class="text-gray-700 font-medium">Asman Umum</span>
-                </div>
-                <i class="fas fa-arrow-right text-blue-300 hidden sm:block mx-2"></i>
-                <i class="fas fa-arrow-down text-blue-300 sm:hidden ml-3"></i>
-                <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border shadow-sm">
-                    <span class="w-6 h-6 rounded-full bg-green-200 text-green-600 text-xs flex items-center justify-center font-bold">4</span>
-                    <span class="text-gray-700 font-medium">Manager Administrasi</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Actions -->
-    <div class="flex justify-between">
-        <a href="{{ url_for('surat_list') }}" class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-5 py-2.5 rounded-lg transition text-sm">
-            <i class="fas fa-arrow-left"></i> Kembali
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+        <a href="{{ url_for('surat.surat_list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Kembali
         </a>
-        <button type="submit" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded-lg transition text-sm shadow-lg shadow-blue-600/30">
-            <i class="fas fa-save"></i> Simpan Surat
-        </button>
+        <div class="flex items-center gap-3">
+            <button type="button" onclick="saveDraft()" class="btn btn-secondary">
+                <i class="fas fa-save mr-2"></i>
+                Simpan Draft
+            </button>
+            <button type="submit" id="submitBtn" class="btn btn-primary">
+                <i class="fas fa-paper-plane mr-2"></i>
+                Kirim Surat
+            </button>
+        </div>
     </div>
 </form>
+
+<!-- ============================================ -->
+<!-- TEMPLATE MODAL -->
+<!-- ============================================ -->
+<div id="templateModal" class="modal-overlay">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <div class="modal-header-content">
+                <div class="modal-header-icon purple">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="modal-header-text">
+                    <h3>Template Barang</h3>
+                    <p>Klik barang untuk menambahkan ke daftar</p>
+                </div>
+            </div>
+            <button onclick="closeTemplateModal()" class="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="template-grid" id="templateList">
+                <!-- Templates will be loaded here -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" onclick="closeTemplateModal()" class="btn btn-secondary">
+                <i class="fas fa-times mr-2"></i>
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- DRAFT MODAL -->
+<!-- ============================================ -->
+<div id="draftModal" class="modal-overlay">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <div class="modal-header-content">
+                <div class="modal-header-icon amber">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="modal-header-text">
+                    <h3>Draft Tersimpan</h3>
+                    <p>Periksa sebelum memuat draft</p>
+                </div>
+            </div>
+            <button onclick="closeDraftModal()" class="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="draftContent">
+                <!-- Draft content will be shown here -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" onclick="clearDraft()" class="btn btn-danger">
+                <i class="fas fa-trash mr-2"></i>
+                Hapus
+            </button>
+            <button type="button" onclick="loadDraft()" class="btn btn-primary">
+                <i class="fas fa-upload mr-2"></i>
+                Muat Draft
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- PREVIEW MODAL -->
+<!-- ============================================ -->
+<div id="previewModal" class="modal-overlay">
+    <div class="modal modal-xl">
+        <div class="modal-header">
+            <div class="modal-header-content">
+                <div class="modal-header-icon green">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="modal-header-text">
+                    <h3>Preview Surat Izin</h3>
+                    <p>Periksa data sebelum dikirim</p>
+                </div>
+            </div>
+            <button onclick="closePreviewModal()" class="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="previewContent">
+            <!-- Preview content will be generated here -->
+        </div>
+        <div class="modal-footer">
+            <button type="button" onclick="closePreviewModal()" class="btn btn-secondary">
+                <i class="fas fa-edit mr-2"></i>
+                Edit Lagi
+            </button>
+            <button type="button" onclick="submitForm()" class="btn btn-primary">
+                <i class="fas fa-paper-plane mr-2"></i>
+                Kirim Surat
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+// ============================================
+// CSRF TOKEN HELPER
+// ============================================
+function getCSRFToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.content : '';
+}
+
+function csrfFetch(url, options = {}) {
+    const headers = {
+        ...options.headers,
+        'X-CSRFToken': getCSRFToken()
+    };
+    return fetch(url, { ...options, headers });
+}
+
+// ============================================
+// GLOBAL STATE
+// ============================================
 let rowNum = 0;
-function addRow(d) {
-    d = d || {};
-    rowNum++;
-    // Desktop table row
-    const tbody = document.getElementById('barangBody');
-    const tr = document.createElement('tr');
-    tr.className = 'border-t';
-    tr.dataset.idx = rowNum;
-    tr.innerHTML = `
-        <td class="px-3 py-2 text-center rnum">${rowNum}</td>
-        <td class="px-3 py-2"><input type="text" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm bn" value="${d.nama_barang||''}" required></td>
-        <td class="px-3 py-2"><input type="number" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm bj" value="${d.jumlah||1}" min="1" required></td>
-        <td class="px-3 py-2">
-            <select class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm bs">
-                <option value="Unit" ${d.satuan==='Unit'?'selected':''}>Unit</option>
-                <option value="Set" ${d.satuan==='Set'?'selected':''}>Set</option>
-                <option value="Pcs" ${d.satuan==='Pcs'?'selected':''}>Pcs</option>
-                <option value="Dus" ${d.satuan==='Dus'?'selected':''}>Dus</option>
-                <option value="Lembar" ${d.satuan==='Lembar'?'selected':''}>Lembar</option>
-                <option value="Roll" ${d.satuan==='Roll'?'selected':''}>Roll</option>
-                <option value="Kg" ${d.satuan==='Kg'?'selected':''}>Kg</option>
-                <option value="Liter" ${d.satuan==='Liter'?'selected':''}>Liter</option>
-            </select>
-        </td>
-        <td class="px-3 py-2"><input type="text" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm bk" value="${d.keterangan||''}"></td>
-        <td class="px-3 py-2"><input type="file" name="foto_barang_${rowNum-1}" accept="image/*" multiple class="text-xs w-full"></td>
-        <td class="px-3 py-2 text-center"><button type="button" onclick="removeRow(${rowNum})" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button></td>`;
-    tbody.appendChild(tr);
-    // Mobile card
-    const mob = document.getElementById('barangMobile');
-    const card = document.createElement('div');
-    card.className = 'bg-gray-50 rounded-lg p-3 border';
-    card.dataset.idx = rowNum;
-    card.innerHTML = `
-        <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold text-gray-500">Barang #<span class="mnum">${rowNum}</span></span>
-            <button type="button" onclick="removeRow(${rowNum})" class="text-red-500 hover:text-red-700 text-xs"><i class="fas fa-trash"></i></button>
-        </div>
-        <input type="text" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm mb-2 mbn" value="${d.nama_barang||''}" placeholder="Nama Barang" required>
-        <div class="grid grid-cols-3 gap-2 mb-2">
-            <input type="number" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm mbj" value="${d.jumlah||1}" min="1" placeholder="Jml" required>
-            <select class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm mbs">
-                <option value="Unit" ${d.satuan==='Unit'?'selected':''}>Unit</option>
-                <option value="Set" ${d.satuan==='Set'?'selected':''}>Set</option>
-                <option value="Pcs" ${d.satuan==='Pcs'?'selected':''}>Pcs</option>
-                <option value="Dus" ${d.satuan==='Dus'?'selected':''}>Dus</option>
-                <option value="Lembar" ${d.satuan==='Lembar'?'selected':''}>Lembar</option>
-                <option value="Roll" ${d.satuan==='Roll'?'selected':''}>Roll</option>
-                <option value="Kg" ${d.satuan==='Kg'?'selected':''}>Kg</option>
-                <option value="Liter" ${d.satuan==='Liter'?'selected':''}>Liter</option>
-            </select>
-            <input type="text" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm mbk" value="${d.keterangan||''}" placeholder="Ket.">
-        </div>
-        <input type="file" name="foto_barang_${rowNum-1}" accept="image/*" multiple class="text-xs w-full">`;
-    mob.appendChild(card);
-    sync();
+let companies = [];
+let templates = [];
+let autoSaveTimeout = null;
+const DRAFT_KEY = 'surat_draft_v1';
+
+// ============================================
+// INITIALIZATION
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded, initializing...');
+    loadCompanies();
+    loadTemplates();
+    checkDraft();
+    setupAutoSave();
+    updateBarangCount();
+    setupCompanyAutocomplete();
+    generateNoSurat();
+    setupBarangFileInputs();
+    console.log('Initialization complete');
+});
+
+// Setup file input handlers for barang table using event delegation
+function setupBarangFileInputs() {
+    const table = document.getElementById('barangTable');
+    if (!table) return;
+
+    // Use event delegation for dynamically added file inputs
+    table.addEventListener('change', function(e) {
+        if (e.target && e.target.type === 'file' && e.target.classList.contains('file-foto-barang')) {
+            handleBarangFileSelect(e.target);
+        }
+    });
 }
 
-function removeRow(idx) {
-    const tr = document.querySelector(`#barangBody tr[data-idx="${idx}"]`);
-    const mc = document.querySelector(`#barangMobile div[data-idx="${idx}"]`);
-    if (tr) tr.remove();
-    if (mc) mc.remove();
-    renum();
-    sync();
+// Handle barang file selection
+function handleBarangFileSelect(input) {
+    const td = input.closest('td');
+    if (!td) return;
+
+    // Remove existing preview if any
+    const existingPreview = td.querySelector('.barang-file-selected, .barang-file-count');
+    if (existingPreview) existingPreview.remove();
+
+    if (!input.files || input.files.length === 0) return;
+
+    if (input.files.length === 1) {
+        // Single file selected
+        const file = input.files[0];
+        const fileSize = (file.size / 1024).toFixed(1);
+        const sizeLabel = fileSize > 1024 ? (file.size / 1024 / 1024).toFixed(1) + ' MB' : fileSize + ' KB';
+
+        const preview = document.createElement('div');
+        preview.className = 'barang-file-selected';
+        preview.innerHTML =
+            '<i class="fas fa-image"></i>' +
+            '<span class="file-name" title="' + escapeHtml(file.name) + '">' + escapeHtml(file.name) + '</span>' +
+            '<span class="file-remove" onclick="removeBarangFile(this, event)"><i class="fas fa-times"></i></span>';
+
+        td.appendChild(preview);
+    } else {
+        // Multiple files selected
+        const preview = document.createElement('div');
+        preview.className = 'barang-file-count';
+        preview.innerHTML =
+            '<i class="fas fa-images"></i>' +
+            '<span>' + input.files.length + ' file dipilih</span>';
+
+        td.appendChild(preview);
+    }
 }
 
-function renum() {
-    document.querySelectorAll('#barangBody tr').forEach((tr, i) => { tr.querySelector('.rnum').textContent = i + 1; });
-    document.querySelectorAll('#barangMobile > div').forEach((c, i) => { const m = c.querySelector('.mnum'); if(m) m.textContent = i + 1; });
+// Remove selected file from barang table
+function removeBarangFile(btn, event) {
+    event.stopPropagation();
+    const td = btn.closest('td');
+    if (!td) return;
+
+    // Find and clear the file input
+    const fileInput = td.querySelector('input[type="file"]');
+    if (fileInput) fileInput.value = '';
+
+    // Remove preview
+    const preview = td.querySelector('.barang-file-selected');
+    if (preview) preview.remove();
 }
 
-function sync() {
-    const items = [];
-    document.querySelectorAll('#barangBody tr').forEach(tr => {
-        items.push({
-            nama_barang: tr.querySelector('.bn').value,
-            jumlah: tr.querySelector('.bj').value,
-            satuan: tr.querySelector('.bs').value,
-            keterangan: tr.querySelector('.bk').value
+// ============================================
+// AUTO NUMBER SURAT
+// ============================================
+async function generateNoSurat() {
+    const statusIcon = document.getElementById('noSuratStatus');
+    const input = document.getElementById('noSurat');
+    if (!input) return;
+    statusIcon.innerHTML = '<i class="fas fa-spinner fa-spin text-blue-400"></i>';
+    try {
+        const response = await csrfFetch('/api/auto-no-surat');
+        const data = await response.json();
+        if (data.success) {
+            input.value = data.no_surat;
+            document.getElementById('tanggalSurat').value = data.date;
+            document.getElementById('tglTerbit').value = data.tgl_terbit;
+            statusIcon.innerHTML = '<i class="fas fa-check text-green-400"></i>';
+            setTimeout(() => { statusIcon.innerHTML = ''; }, 2000);
+            checkNoSuratDuplicate();
+        }
+    } catch (error) {
+        statusIcon.innerHTML = '<i class="fas fa-times text-red-400"></i>';
+    }
+}
+
+async function checkNoSuratDuplicate() {
+    const input = document.getElementById('noSurat');
+    const statusIcon = document.getElementById('noSuratStatus');
+    const errorMsg = document.getElementById('noSuratError');
+    if (!input || !input.value) return;
+    try {
+        const response = await csrfFetch('/api/check-no-surat?no_surat=' + encodeURIComponent(input.value));
+        const data = await response.json();
+        if (data.exists) {
+            statusIcon.innerHTML = '<i class="fas fa-exclamation-triangle text-red-400"></i>';
+            errorMsg.textContent = data.message;
+            errorMsg.classList.remove('hidden');
+            input.classList.add('border-red-500');
+        } else {
+            statusIcon.innerHTML = '<i class="fas fa-check text-green-400"></i>';
+            errorMsg.classList.add('hidden');
+            input.classList.remove('border-red-500');
+        }
+    } catch (error) { console.error('Error:', error); }
+}
+
+// ============================================
+// AUTO-FILL FROM PROFILE
+// ============================================
+async function autoFillFromProfile() {
+    try {
+        const response = await csrfFetch('/api/user-profile');
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('namaPemohon').value = data.nama;
+            document.getElementById('divisiSelect').value = data.divisi;
+            showAutoSaveIndicator('Auto-fill berhasil!');
+        }
+    } catch (error) { console.error('Error:', error); }
+}
+
+// ============================================
+// COMPANY AUTOCOMPLETE
+// ============================================
+async function loadCompanies() {
+    try {
+        console.log('Loading companies...');
+        const response = await csrfFetch('/api/companies');
+        const data = await response.json();
+        console.log('Companies response:', data);
+        if (data.success) companies = data.companies;
+        console.log('Companies loaded:', companies.length);
+    } catch (error) { console.error('Error loading companies:', error); }
+}
+
+function setupCompanyAutocomplete() {
+    const input = document.getElementById('perusahaanInput');
+    const dropdown = document.getElementById('companyDropdown');
+    if (!input || !dropdown) {
+        console.error('Company input or dropdown not found!');
+        return;
+    }
+    input.addEventListener('input', function() {
+        const value = this.value.toLowerCase().trim();
+        console.log('Input value:', value, 'Companies count:', companies.length);
+        if (value.length < 2) { dropdown.classList.add('hidden'); return; }
+        const filtered = companies.filter(c => c.toLowerCase().includes(value));
+        console.log('Filtered companies:', filtered.length);
+        if (filtered.length > 0) {
+            dropdown.innerHTML = filtered.map(c =>
+                '<div class="px-4 py-2 hover:bg-gray-700 cursor-pointer text-gray-300 text-sm" data-company="' + escapeHtmlAttr(c) + '">' + escapeHtml(c) + '</div>'
+            ).join('');
+            dropdown.classList.remove('hidden');
+            // Use event delegation instead of inline onclick
+            dropdown.querySelectorAll('[data-company]').forEach(el => {
+                el.addEventListener('click', function() {
+                    selectCompany(this.dataset.company);
+                });
+            });
+        } else { dropdown.classList.add('hidden'); }
+    });
+    input.addEventListener('blur', function() { setTimeout(() => dropdown.classList.add('hidden'), 200); });
+}
+
+function selectCompany(company) {
+    document.getElementById('perusahaanInput').value = company;
+    document.getElementById('companyDropdown').classList.add('hidden');
+}
+
+// ============================================
+// TEMPLATES
+// ============================================
+async function loadTemplates() {
+    try {
+        const response = await csrfFetch('/api/templates');
+        const data = await response.json();
+        if (data.success) templates = data.templates;
+    } catch (error) { console.error('Error:', error); }
+}
+
+function openTemplateModal() {
+    const list = document.getElementById('templateList');
+    if (!list) return;
+
+    if (templates.length === 0) {
+        list.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-box-open text-4xl text-gray-500 mb-4"></i>
+                <p class="text-gray-400">Belum ada template tersedia</p>
+            </div>
+        `;
+    } else {
+        list.innerHTML = templates.map((t, idx) =>
+            '<div class="template-item" data-template-idx="' + idx + '">' +
+                '<div class="template-item-icon"><i class="fas fa-box"></i></div>' +
+                '<div class="template-item-content">' +
+                    '<div class="template-item-name">' + escapeHtml(t.nama_barang) + '</div>' +
+                    '<div class="template-item-unit">' + escapeHtml(t.satuan) + '</div>' +
+                '</div>' +
+            '</div>'
+        ).join('');
+    }
+
+    // Use event delegation instead of inline onclick
+    list.querySelectorAll('[data-template-idx]').forEach(el => {
+        el.addEventListener('click', function() {
+            const idx = parseInt(this.dataset.templateIdx);
+            const t = templates[idx];
+            addTemplateItem(t.nama_barang, t.satuan);
         });
+    });
+    document.getElementById('templateModal').classList.add('active');
+}
+
+function closeTemplateModal() { document.getElementById('templateModal').classList.remove('active'); }
+
+function addTemplateItem(nama, satuan) {
+    addRow({ nama_barang: nama, satuan: satuan, jumlah: 1 });
+    closeTemplateModal();
+    showAutoSaveIndicator('Barang ditambahkan dari template');
+}
+
+// ============================================
+// FILE INPUT HANDLER
+// ============================================
+function handleFileSelect(input, previewId) {
+    const preview = document.getElementById(previewId);
+    if (!preview || !input.files || !input.files[0]) return;
+
+    const file = input.files[0];
+    const fileSize = (file.size / 1024 / 1024).toFixed(2);
+    const isImage = file.type.startsWith('image/');
+
+    preview.innerHTML = `
+        <div class="selected-file">
+            <i class="fas ${isImage ? 'fa-image' : 'fa-file'}"></i>
+            <span style="flex: 1; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(file.name)}</span>
+            <span style="font-size: 11px; opacity: 0.7;">${fileSize} MB</span>
+            <span class="remove-file" onclick="event.stopPropagation(); clearFileInput(this.parentElement, '${previewId}', '${input.name}')">
+                <i class="fas fa-times" style="font-size: 10px;"></i>
+            </span>
+        </div>
+    `;
+}
+
+function clearFileInput(preview, previewId, inputName) {
+    const input = document.querySelector(`input[name="${inputName}"]`);
+    if (input) input.value = '';
+
+    const defaultContent = previewId === 'fotoKtpPreview'
+        ? '<div class="title">Klik atau drag file ke sini</div><div class="subtitle">Format: JPG, PNG (Max 2MB)</div>'
+        : '<div class="title">Klik atau drag file ke sini</div><div class="subtitle">Format: PDF, DOC, DOCX, XLS, XLSX (Max 10MB)</div>';
+
+    document.getElementById(previewId).innerHTML = defaultContent;
+}
+
+// ============================================
+// BARANG ROWS
+// ============================================
+function addRow(data) {
+    data = data || {};
+    rowNum++;
+    const tbody = document.getElementById('barangBody');
+    if (!tbody) return;
+    const tr = document.createElement('tr');
+    tr.className = 'barang-row';
+    tr.innerHTML =
+        '<td class="text-center">' +
+            '<span class="row-number">' + rowNum + '</span>' +
+        '</td>' +
+        '<td>' +
+            '<input type="text" class="table-input bn" value="' + escapeHtml(data.nama_barang || '') + '" placeholder="Nama barang" required>' +
+        '</td>' +
+        '<td>' +
+            '<input type="number" class="table-input table-input-number bj" value="' + (data.jumlah || 1) + '" min="1" required>' +
+        '</td>' +
+        '<td>' +
+            '<select class="table-select bs">' +
+                '<option value="Unit"' + (data.satuan==='Unit'?' selected':'') + '>Unit</option>' +
+                '<option value="Set"' + (data.satuan==='Set'?' selected':'') + '>Set</option>' +
+                '<option value="Pcs"' + (data.satuan==='Pcs'?' selected':'') + '>Pcs</option>' +
+                '<option value="Dus"' + (data.satuan==='Dus'?' selected':'') + '>Dus</option>' +
+                '<option value="Lembar"' + (data.satuan==='Lembar'?' selected':'') + '>Lembar</option>' +
+                '<option value="Roll"' + (data.satuan==='Roll'?' selected':'') + '>Roll</option>' +
+                '<option value="Kg"' + (data.satuan==='Kg'?' selected':'') + '>Kg</option>' +
+                '<option value="Liter"' + (data.satuan==='Liter'?' selected':'') + '>Liter</option>' +
+                '<option value="Meter"' + (data.satuan==='Meter'?' selected':'') + '>Meter</option>' +
+                '<option value="Box"' + (data.satuan==='Box'?' selected':'') + '>Box</option>' +
+            '</select>' +
+        '</td>' +
+        '<td class="keterangan-cell">' +
+            '<input type="text" class="table-input table-input-keterangan bk" value="' + escapeHtml(data.keterangan || '') + '" placeholder="Keterangan tambahan...">' +
+        '</td>' +
+        '<td class="text-center">' +
+            '<div class="barang-file-wrapper">' +
+                '<label class="barang-file-btn">' +
+                    '<input type="file" class="file-foto-barang" name="foto_barang_' + rowNum + '" accept="image/*" multiple>' +
+                    '<i class="fas fa-cloud-upload-alt"></i>' +
+                    '<span>Pilih File</span>' +
+                '</label>' +
+            '</div>' +
+        '</td>' +
+        '<td class="text-center">' +
+            '<button type="button" onclick="removeRow(this)" class="delete-btn" title="Hapus">' +
+                '<i class="fas fa-trash-alt"></i>' +
+            '</button>' +
+        '</td>';
+    tbody.appendChild(tr);
+    updateRowNumbers();
+    updateBarangCount();
+    triggerAutoSave();
+}
+
+function removeRow(btn) {
+    const rows = document.querySelectorAll('.barang-row');
+    if (rows.length > 1) {
+        const tr = btn.closest('tr');
+        if (tr) tr.remove();
+        updateRowNumbers();
+        updateBarangCount();
+        triggerAutoSave();
+    }
+}
+
+function updateRowNumbers() {
+    const rows = document.querySelectorAll('.barang-row');
+    rows.forEach((row, idx) => {
+        const numSpan = row.querySelector('.row-number');
+        if (numSpan) numSpan.textContent = idx + 1;
+    });
+}
+
+function updateBarangCount() {
+    const count = document.querySelectorAll('.barang-row').length;
+    const badge = document.getElementById('barangCount');
+    if (badge) badge.textContent = count + ' item';
+    const emptyState = document.getElementById('emptyBarangState');
+    const table = document.getElementById('barangTable');
+    if (emptyState && table) {
+        if (count === 0) { emptyState.classList.remove('hidden'); table.classList.add('hidden'); }
+        else { emptyState.classList.add('hidden'); table.classList.remove('hidden'); }
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function escapeHtmlAttr(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+// ============================================
+// AUTO-SAVE
+// ============================================
+function setupAutoSave() {
+    const form = document.getElementById('suratForm');
+    if (!form) return;
+    form.addEventListener('input', function() { triggerAutoSave(); });
+}
+
+function triggerAutoSave() {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(saveDraftSilent, 2000);
+}
+
+function saveDraftSilent() {
+    const draftData = getFormData();
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({...draftData, savedAt: new Date().toISOString()}));
+    const btn = document.getElementById('draftBtn');
+    if (btn) btn.style.display = 'inline-flex';
+}
+
+function saveDraft() {
+    saveDraftSilent();
+    showAutoSaveIndicator('Draft tersimpan!');
+}
+
+function checkDraft() {
+    const draft = localStorage.getItem(DRAFT_KEY);
+    const btn = document.getElementById('draftBtn');
+    if (draft && btn) btn.style.display = 'inline-flex';
+}
+
+function openDraftModal() {
+    const draft = localStorage.getItem(DRAFT_KEY);
+    const content = document.getElementById('draftContent');
+    if (!content) return;
+    if (draft) {
+        const data = JSON.parse(draft);
+        const savedDate = new Date(data.savedAt);
+        content.innerHTML = `
+            <div class="draft-info">
+                <i class="fas fa-clock"></i>
+                <div class="draft-info-text">
+                    <div class="title">Draft Tersimpan</div>
+                    <div class="date">${savedDate.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}</div>
+                </div>
+            </div>
+            <div class="draft-preview">
+                <div class="draft-item">
+                    <div class="draft-item-label">No. Surat</div>
+                    <div class="draft-item-value">${escapeHtml(data.no_surat) || '-'}</div>
+                </div>
+                <div class="draft-item">
+                    <div class="draft-item-label">Jenis</div>
+                    <div class="draft-item-value" style="text-transform: capitalize;">${escapeHtml(data.jenis) || '-'}</div>
+                </div>
+                <div class="draft-item">
+                    <div class="draft-item-label">Nama</div>
+                    <div class="draft-item-value">${escapeHtml(data.nama) || '-'}</div>
+                </div>
+                <div class="draft-item">
+                    <div class="draft-item-label">Perusahaan</div>
+                    <div class="draft-item-value">${escapeHtml(data.perusahaan) || '-'}</div>
+                </div>
+                <div class="draft-item md:col-span-2" style="grid-column: span 2;">
+                    <div class="draft-item-label">Divisi</div>
+                    <div class="draft-item-value">${escapeHtml(data.divisi) || '-'}</div>
+                </div>
+            </div>
+        `;
+    } else {
+        content.innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-inbox text-4xl text-gray-500 mb-4"></i>
+                <p class="text-gray-400">Tidak ada draft tersimpan</p>
+            </div>
+        `;
+    }
+    document.getElementById('draftModal').classList.add('active');
+}
+
+function closeDraftModal() { document.getElementById('draftModal').classList.remove('active'); }
+
+function loadDraft() {
+    const draft = localStorage.getItem(DRAFT_KEY);
+    if (!draft) return;
+    const data = JSON.parse(draft);
+    if (data.no_surat) document.getElementById('noSurat').value = data.no_surat;
+    if (data.jenis) document.getElementById('jenisSelect').value = data.jenis;
+    if (data.tanggal) document.getElementById('tanggalSurat').value = data.tanggal;
+    if (data.tgl_terbit) document.getElementById('tglTerbit').value = data.tgl_terbit;
+    if (data.divisi) document.getElementById('divisiSelect').value = data.divisi;
+    if (data.nama) document.getElementById('namaPemohon').value = data.nama;
+    if (data.perusahaan) document.getElementById('perusahaanInput').value = data.perusahaan;
+    if (data.badge) document.getElementById('badgeId').value = data.badge;
+    if (data.no_kendaraan) document.getElementById('noKendaraan').value = data.no_kendaraan;
+    if (data.no_spk) document.getElementById('noSpk').value = data.no_spk;
+    closeDraftModal();
+    showAutoSaveIndicator('Draft dimuat!');
+}
+
+function clearDraft() {
+    localStorage.removeItem(DRAFT_KEY);
+    const btn = document.getElementById('draftBtn');
+    if (btn) btn.style.display = 'none';
+    closeDraftModal();
+    showAutoSaveIndicator('Draft dihapus!');
+}
+
+function getFormData() {
+    return {
+        no_surat: document.getElementById('noSurat')?.value || '',
+        jenis: document.getElementById('jenisSelect')?.value || '',
+        tanggal: document.getElementById('tanggalSurat')?.value || '',
+        tgl_terbit: document.getElementById('tglTerbit')?.value || '',
+        divisi: document.getElementById('divisiSelect')?.value || '',
+        nama: document.getElementById('namaPemohon')?.value || '',
+        perusahaan: document.getElementById('perusahaanInput')?.value || '',
+        badge: document.getElementById('badgeId')?.value || '',
+        no_kendaraan: document.getElementById('noKendaraan')?.value || '',
+        no_spk: document.getElementById('noSpk')?.value || ''
+    };
+}
+
+// ============================================
+// PREVIEW MODAL
+// ============================================
+function openPreviewModal() {
+    updateBarangItems();
+    const content = document.getElementById('previewContent');
+    if (!content) return;
+    const form = document.getElementById('suratForm');
+    const formData = new FormData(form);
+    const items = [];
+    document.querySelectorAll('.barang-row').forEach(row => {
+        const nama = row.querySelector('.bn')?.value;
+        if (nama) {
+            items.push({ nama_barang: nama, jumlah: row.querySelector('.bj')?.value || '1', satuan: row.querySelector('.bs')?.value || 'Unit', keterangan: row.querySelector('.bk')?.value || '-' });
+        }
+    });
+
+    // Build items table rows with proper escaping
+    const itemsHtml = items.map((item, i) =>
+        '<tr class="border-b border-gray-700/50">' +
+            '<td class="py-2 px-3 text-gray-400">' + (i + 1) + '</td>' +
+            '<td class="py-2 px-3 text-white">' + escapeHtml(item.nama_barang) + '</td>' +
+            '<td class="py-2 px-3 text-center text-white">' + escapeHtml(item.jumlah) + '</td>' +
+            '<td class="py-2 px-3 text-center text-white">' + escapeHtml(item.satuan) + '</td>' +
+            '<td class="py-2 px-3 text-gray-400">' + escapeHtml(item.keterangan) + '</td>' +
+        '</tr>'
+    ).join('');
+
+    content.innerHTML =
+        '<div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">' +
+            // Header
+            '<div class="bg-gradient-to-r from-blue-600/20 to-blue-800/20 p-6 border-b border-gray-700">' +
+                '<div class="flex items-center justify-between">' +
+                    '<div>' +
+                        '<h2 class="text-xl font-bold text-white">SURAT IZIN ' + (formData.get('jenis') || 'KELUAR').toUpperCase() + ' BARANG</h2>' +
+                        '<p class="text-gray-400 text-sm mt-1">PT PLN INDONESIA POWER - UBP Jawa Tengah 2 Adipala</p>' +
+                    '</div>' +
+                    '<div class="text-right">' +
+                        '<p class="text-sm text-gray-400">No. Surat</p>' +
+                        '<p class="text-white font-semibold">' + escapeHtml(formData.get('no_surat') || '-') + '</p>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+            // Info Surat
+            '<div class="p-6 border-b border-gray-700">' +
+                '<div class="grid grid-cols-2 md:grid-cols-4 gap-4">' +
+                    '<div><p class="text-xs text-gray-500 uppercase">Tanggal</p><p class="text-white">' + escapeHtml(formData.get('tanggal') || '-') + '</p></div>' +
+                    '<div><p class="text-xs text-gray-500 uppercase">Tgl. Terbit</p><p class="text-white">' + escapeHtml(formData.get('tgl_terbit') || '-') + '</p></div>' +
+                    '<div><p class="text-xs text-gray-500 uppercase">Divisi</p><p class="text-white">' + escapeHtml(formData.get('divisi') || '-') + '</p></div>' +
+                    '<div><p class="text-xs text-gray-500 uppercase">Jenis</p><p class="text-white capitalize">' + (formData.get('jenis') || '-').toLowerCase() + '</p></div>' +
+                '</div>' +
+            '</div>' +
+            // Data Pemohon
+            '<div class="p-6 border-b border-gray-700">' +
+                '<h3 class="font-semibold text-blue-400 mb-3 flex items-center gap-2"><i class="fas fa-user"></i> Data Pemohon</h3>' +
+                '<div class="grid grid-cols-2 gap-4 text-sm">' +
+                    '<div><span class="text-gray-400">Nama:</span> <span class="text-white">' + escapeHtml(formData.get('nama') || '-') + '</span></div>' +
+                    '<div><span class="text-gray-400">Badge:</span> <span class="text-white">' + escapeHtml(formData.get('badge') || '-') + '</span></div>' +
+                    '<div><span class="text-gray-400">Perusahaan:</span> <span class="text-white">' + escapeHtml(formData.get('perusahaan') || '-') + '</span></div>' +
+                    '<div><span class="text-gray-400">No. Kendaraan:</span> <span class="text-white">' + escapeHtml(formData.get('no_kendaraan') || '-') + '</span></div>' +
+                    '<div class="col-span-2"><span class="text-gray-400">No. SPK:</span> <span class="text-white">' + escapeHtml(formData.get('no_spk') || '-') + '</span></div>' +
+                '</div>' +
+            '</div>' +
+            // Daftar Barang
+            '<div class="p-6">' +
+                '<h3 class="font-semibold text-blue-400 mb-3 flex items-center gap-2"><i class="fas fa-boxes"></i> Daftar Barang (' + items.length + ' item)</h3>' +
+                '<table class="w-full text-sm">' +
+                    '<thead><tr class="bg-gray-700/50">' +
+                        '<th class="text-left py-2 px-3 text-gray-400">No</th>' +
+                        '<th class="text-left py-2 px-3 text-gray-400">Nama Barang</th>' +
+                        '<th class="text-center py-2 px-3 text-gray-400">Jumlah</th>' +
+                        '<th class="text-center py-2 px-3 text-gray-400">Satuan</th>' +
+                        '<th class="text-left py-2 px-3 text-gray-400">Keterangan</th>' +
+                    '</tr></thead>' +
+                    '<tbody>' + itemsHtml + '</tbody>' +
+                '</table>' +
+            '</div>' +
+        '</div>';
+    document.getElementById('previewModal').classList.add('active');
+}
+
+function closePreviewModal() { document.getElementById('previewModal').classList.remove('active'); }
+
+function submitForm() {
+    closePreviewModal();
+    updateBarangItems();
+    document.getElementById('suratForm').submit();
+}
+
+function updateBarangItems() {
+    const items = [];
+    document.querySelectorAll('.barang-row').forEach(row => {
+        const nama = row.querySelector('.bn')?.value;
+        if (nama) {
+            items.push({ nama_barang: nama, jumlah: row.querySelector('.bj')?.value || '1', satuan: row.querySelector('.bs')?.value || 'Unit', keterangan: row.querySelector('.bk')?.value || '' });
+        }
     });
     document.getElementById('barangItems').value = JSON.stringify(items);
 }
 
-function syncDesktopToMobile(idx) {
-    const tr = document.querySelector(`#barangBody tr[data-idx="${idx}"]`);
-    const mc = document.querySelector(`#barangMobile div[data-idx="${idx}"]`);
-    if (!tr || !mc) return;
-    mc.querySelector('.mbn').value = tr.querySelector('.bn').value;
-    mc.querySelector('.mbj').value = tr.querySelector('.bj').value;
-    mc.querySelector('.mbs').value = tr.querySelector('.bs').value;
-    mc.querySelector('.mbk').value = tr.querySelector('.bk').value;
+// ============================================
+// INDICATORS
+// ============================================
+function showAutoSaveIndicator(message) {
+    const indicator = document.getElementById('autosaveIndicator');
+    if (!indicator) return;
+    indicator.innerHTML = '<i class="fas fa-check text-green-400"></i><span class="text-sm text-gray-300">' + message + '</span>';
+    indicator.classList.remove('opacity-0', 'translate-y-2');
+    indicator.classList.add('opacity-100', 'translate-y-0');
+    setTimeout(() => {
+        indicator.classList.remove('opacity-100', 'translate-y-0');
+        indicator.classList.add('opacity-0', 'translate-y-2');
+    }, 2000);
 }
 
-function syncMobileToDesktop(idx) {
-    const tr = document.querySelector(`#barangBody tr[data-idx="${idx}"]`);
-    const mc = document.querySelector(`#barangMobile div[data-idx="${idx}"]`);
-    if (!tr || !mc) return;
-    tr.querySelector('.bn').value = mc.querySelector('.mbn').value;
-    tr.querySelector('.bj').value = mc.querySelector('.mbj').value;
-    tr.querySelector('.bs').value = mc.querySelector('.mbs').value;
-    tr.querySelector('.bk').value = mc.querySelector('.mbk').value;
+// ============================================
+// VALIDATION & SUBMISSION
+// ============================================
+document.getElementById('suratForm')?.addEventListener('submit', function(e) {
+    updateBarangItems();
+    const items = JSON.parse(document.getElementById('barangItems')?.value || '[]');
+    if (items.length === 0) { e.preventDefault(); alert('Minimal harus ada 1 barang!'); return; }
+    const noSuratError = document.getElementById('noSuratError');
+    if (noSuratError && !noSuratError.classList.contains('hidden')) { e.preventDefault(); alert('No. Surat sudah digunakan!'); return; }
+});
+
+// ============================================
+// MODAL CLOSE HANDLERS
+// ============================================
+['templateModal', 'draftModal', 'previewModal'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        ['templateModal', 'draftModal', 'previewModal'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+    }
+});
+
+
+// Update Approval Chain Info based on urgency
+function updateApprovalChainInfo() {
+    const urgency = document.getElementById('urgencySelect').value;
+    const infoText = document.getElementById('approvalChainText');
+    const infoBox = document.getElementById('approvalChainInfo');
+
+    if (urgency === 'urgent') {
+        infoText.textContent = 'Urgent: Manager only (Fast Track - persetujuan langsung Manager)';
+        infoBox.classList.remove('bg-blue-500/10', 'border-blue-500/20', 'bg-purple-500/10', 'border-purple-500/20');
+        infoBox.classList.add('bg-orange-500/10', 'border-orange-500/20');
+    } else if (urgency === 'full') {
+        infoText.textContent = 'Full: User → Satpam → Asman → Manager (Semua tahap approval)';
+        infoBox.classList.remove('bg-blue-500/10', 'border-blue-500/20', 'bg-orange-500/10', 'border-orange-500/20');
+        infoBox.classList.add('bg-purple-500/10', 'border-purple-500/20');
+    } else {
+        infoText.textContent = 'Normal: User → Satpam → Manager (Tanpa Asman)';
+        infoBox.classList.remove('bg-orange-500/10', 'border-orange-500/20', 'bg-purple-500/10', 'border-purple-500/20');
+        infoBox.classList.add('bg-blue-500/10', 'border-blue-500/20');
+    }
 }
 
-document.getElementById('suratForm').addEventListener('submit', function(e) {
-    if (!document.querySelectorAll('#barangBody tr').length) { e.preventDefault(); alert('Tambahkan minimal 1 barang!'); return; }
-    sync();
-});
-document.addEventListener('input', function(e) {
-    const tr = e.target.closest('#barangBody tr');
-    if (tr) { syncDesktopToMobile(tr.dataset.idx); sync(); return; }
-    const mc = e.target.closest('#barangMobile > div');
-    if (mc) { syncMobileToDesktop(mc.dataset.idx); sync(); }
-});
-document.addEventListener('DOMContentLoaded', function() { addRow(); });
 </script>
 {% endblock %}

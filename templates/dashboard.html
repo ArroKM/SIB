@@ -1,205 +1,521 @@
 {% extends "base.html" %}
 {% block title %}Dashboard - {{ app_name }}{% endblock %}
+{% block page_icon %}fa-boxes-stacked{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}{{ app_name }}{% endblock %}
 
 {% block content %}
-<!-- Page header -->
-<div class="mb-6">
-    <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
-    <p class="text-gray-500 text-sm mt-1">Selamat datang, {{ current_user.nama_lengkap }}</p>
-</div>
-
-<!-- Stat cards -->
-<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 mb-8">
-    <div class="bg-white rounded-xl shadow-sm border p-3 sm:p-5 flex items-center gap-2 sm:gap-4">
-        <div class="bg-red-100 text-red-600 rounded-lg p-2 sm:p-3 flex-shrink-0"><i class="fas fa-arrow-up text-base sm:text-xl"></i></div>
-        <div class="min-w-0">
-            <p class="text-lg sm:text-2xl font-bold">{{ total_keluar }}</p>
-            <p class="text-[10px] sm:text-sm text-gray-500 truncate">Surat Keluar</p>
-        </div>
+<!-- ========================================= -->
+<!-- 1. GREETING + QUICK INSIGHT (full width)  -->
+<!-- ========================================= -->
+<div class="mb-10 flex flex-wrap items-center justify-between gap-4 animate-fade-in">
+    <div>
+        <h1 class="text-3xl font-extrabold text-white tracking-tight">
+            Selamat datang kembali, <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">{{ current_user.username if current_user else 'Admin' }}</span> 
+        </h1>
+        <p class="text-sm text-gray-400 mt-1">Ringkasan aktivitas surat menyurat hari ini</p>
     </div>
-    <div class="bg-white rounded-xl shadow-sm border p-3 sm:p-5 flex items-center gap-2 sm:gap-4">
-        <div class="bg-green-100 text-green-600 rounded-lg p-2 sm:p-3 flex-shrink-0"><i class="fas fa-arrow-down text-base sm:text-xl"></i></div>
-        <div class="min-w-0">
-            <p class="text-lg sm:text-2xl font-bold">{{ total_masuk }}</p>
-            <p class="text-[10px] sm:text-sm text-gray-500 truncate">Surat Masuk</p>
-        </div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm border p-3 sm:p-5 flex items-center gap-2 sm:gap-4">
-        <div class="bg-yellow-100 text-yellow-600 rounded-lg p-2 sm:p-3 flex-shrink-0"><i class="fas fa-clock text-base sm:text-xl"></i></div>
-        <div class="min-w-0">
-            <p class="text-lg sm:text-2xl font-bold">{{ total_pending }}</p>
-            <p class="text-[10px] sm:text-sm text-gray-500 truncate">Pending</p>
-        </div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm border p-3 sm:p-5 flex items-center gap-2 sm:gap-4">
-        <div class="bg-blue-100 text-blue-600 rounded-lg p-2 sm:p-3 flex-shrink-0"><i class="fas fa-search text-base sm:text-xl"></i></div>
-        <div class="min-w-0">
-            <p class="text-lg sm:text-2xl font-bold">{{ total_review }}</p>
-            <p class="text-[10px] sm:text-sm text-gray-500 truncate">Review</p>
-        </div>
-    </div>
-    <div class="col-span-2 sm:col-span-1 bg-white rounded-xl shadow-sm border p-3 sm:p-5 flex items-center gap-2 sm:gap-4">
-        <div class="bg-emerald-100 text-emerald-600 rounded-lg p-2 sm:p-3 flex-shrink-0"><i class="fas fa-check-circle text-base sm:text-xl"></i></div>
-        <div class="min-w-0">
-            <p class="text-lg sm:text-2xl font-bold">{{ total_approved }}</p>
-            <p class="text-[10px] sm:text-sm text-gray-500 truncate">Disetujui</p>
-        </div>
+    <!-- Dua tombol aksi: Surat Keluar & Surat Masuk -->
+    <div class="flex items-center gap-3 flex-wrap">
+        <a href="{{ url_for('surat.add_surat', jenis='keluar') }}" 
+           class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5">
+            <i class="fas fa-arrow-up"></i>
+            Surat Keluar
+        </a>
+        <a href="{{ url_for('surat.add_surat', jenis='masuk') }}" 
+           class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-blue-400/30 hover:shadow-blue-400/50 hover:-translate-y-0.5">
+            <i class="fas fa-arrow-down"></i>
+            Surat Masuk
+        </a>
     </div>
 </div>
 
-<!-- Charts row -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-    <div class="bg-white rounded-xl shadow-sm border p-5">
-        <h3 class="font-semibold text-gray-700 mb-4"><i class="fas fa-chart-bar mr-2 text-blue-500"></i>Statistik Bulanan</h3>
-        <canvas id="monthlyChart" height="220"></canvas>
+<!-- ========================================= -->
+<!-- 2. STATS CARDS – ASYMMETRIC GRID + PROGRESS -->
+<!-- ========================================= -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-10 animate-fade-in-up stagger-children">
+    <!-- Kartu 1: Surat Keluar (lebar 2x di md?) – kita buat variasi ukuran -->
+    <div class="md:col-span-1 relative group overflow-hidden rounded-3xl bg-gradient-to-br from-rose-500 to-red-600 p-6 text-white shadow-2xl shadow-rose-500/20 hover:shadow-rose-500/40 transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cGF0aCBkPSJNMzAgMTBhMjAgMjAgMCAxIDAgMCA0MCAyMCAyMCAwIDAgMCAwLTQweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjA1Ii8+PC9zdmc+')] bg-repeat opacity-20"></div>
+        <div class="relative z-10">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-white/70 text-sm font-medium">Surat Keluar</p>
+                    <p class="text-5xl font-black mt-1">{{ total_keluar }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                    <i class="fas fa-arrow-up text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center gap-2 text-xs">
+                <span class="bg-white/20 px-2 py-0.5 rounded-full">+12%</span>
+                <span class="text-white/60">dari bulan lalu</span>
+            </div>
+            <!-- progress bar -->
+            <div class="mt-3 w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+                <div class="h-full w-3/4 bg-white/60 rounded-full transition-all duration-1000 group-hover:w-full"></div>
+            </div>
+        </div>
     </div>
-    <div class="bg-white rounded-xl shadow-sm border p-5">
-        <h3 class="font-semibold text-gray-700 mb-4"><i class="fas fa-chart-pie mr-2 text-blue-500"></i>Per Divisi</h3>
-        <canvas id="divisiChart" height="220"></canvas>
+
+    <!-- Kartu 2: Surat Masuk -->
+    <div class="relative group overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 p-6 text-white shadow-2xl shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjA1Ii8+PC9zdmc+')] bg-repeat opacity-20"></div>
+        <div class="relative z-10">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-white/70 text-sm font-medium">Surat Masuk</p>
+                    <p class="text-5xl font-black mt-1">{{ total_masuk }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                    <i class="fas fa-arrow-down text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center gap-2 text-xs">
+                <span class="bg-white/20 px-2 py-0.5 rounded-full">+5%</span>
+                <span class="text-white/60">dari bulan lalu</span>
+            </div>
+            <div class="mt-3 w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+                <div class="h-full w-1/2 bg-white/60 rounded-full transition-all duration-1000 group-hover:w-full"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kartu 3: Menunggu + indikator blinking -->
+    <div class="relative group overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-white shadow-2xl shadow-amber-500/20 hover:shadow-amber-500/40 transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cmVjdCB4PSIxMCIgeT0iMTAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjA1Ii8+PC9zdmc+')] bg-repeat opacity-20"></div>
+        <div class="relative z-10">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-white/70 text-sm font-medium">Menunggu</p>
+                    <p class="text-5xl font-black mt-1">{{ total_pending }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg relative">
+                    <i class="fas fa-clock text-xl"></i>
+                    {% if total_pending > 0 %}
+                    <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-400 rounded-full animate-ping"></span>
+                    <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full"></span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mt-4 flex items-center gap-2 text-xs">
+                <span class="bg-white/20 px-2 py-0.5 rounded-full">{{ total_pending }} perlu aksi</span>
+            </div>
+            <div class="mt-3 w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+                <div class="h-full w-2/3 bg-white/60 rounded-full transition-all duration-1000 group-hover:w-full"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kartu 4: Disetujui + Ditolak digabung dalam satu kartu split (inovasi) -->
+    <div class="relative group overflow-hidden rounded-3xl bg-gradient-to-br from-slate-800 to-slate-900 p-6 text-white shadow-2xl shadow-slate-700/20 hover:shadow-slate-600/40 transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDYwIDYwIj48cG9seWdvbiBwb2ludHM9IjMwLDUgNTUsMjUgNDUsNTUgMTUsNTUgNSwyNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjA1Ii8+PC9zdmc+')] bg-repeat opacity-20"></div>
+        <div class="relative z-10">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-white/70 text-sm font-medium">Approved / Rejected</p>
+                    <div class="flex gap-4 mt-1">
+                        <span class="text-4xl font-black text-emerald-400">{{ total_approved }}</span>
+                        <span class="text-4xl font-black text-rose-400">{{ total_rejected }}</span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 backdrop-blur-sm flex items-center justify-center">
+                        <i class="fas fa-check text-emerald-400"></i>
+                    </div>
+                    <div class="w-10 h-10 rounded-2xl bg-rose-500/20 backdrop-blur-sm flex items-center justify-center">
+                        <i class="fas fa-xmark text-rose-400"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 flex gap-2 text-xs">
+                <span class="bg-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span>Disetujui</span>
+                <span class="bg-rose-500/20 px-2 py-0.5 rounded-full flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-400"></span>Ditolak</span>
+            </div>
+            <div class="mt-3 w-full h-1.5 bg-slate-700 rounded-full overflow-hidden flex">
+                <div class="h-full w-3/4 bg-emerald-400/60 rounded-l-full transition-all duration-1000 group-hover:w-4/5"></div>
+                <div class="h-full w-1/4 bg-rose-400/60 rounded-r-full transition-all duration-1000 group-hover:w-1/5"></div>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Quick actions -->
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-    <a href="{{ url_for('add_surat', jenis='keluar') }}" class="flex items-center gap-4 bg-white border rounded-xl p-5 hover:shadow-md transition group">
-        <div class="bg-red-100 text-red-600 rounded-lg p-3 group-hover:bg-red-600 group-hover:text-white transition"><i class="fas fa-arrow-up text-lg"></i></div>
+<!-- ========================================= -->
+<!-- 3. OVERDUE ALERT – dengan efek neon border -->
+<!-- ========================================= -->
+{% if overdue_count > 0 %}
+<div class="mb-10 relative overflow-hidden rounded-2xl border border-rose-500/30 bg-gradient-to-r from-rose-500/10 to-orange-500/10 backdrop-blur-xl p-5 flex items-center justify-between gap-4 animate-fade-in-up">
+    <div class="absolute -inset-1 bg-gradient-to-r from-rose-500/20 to-orange-500/20 blur-2xl -z-10"></div>
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500/30 to-orange-500/30 flex items-center justify-center text-2xl">
+            ⏳
+        </div>
         <div>
-            <p class="font-semibold text-gray-800">Buat Surat Keluar</p>
-            <p class="text-xs text-gray-500">Surat izin keluar barang baru</p>
+            <h4 class="font-bold text-white text-lg">⚠️ {{ overdue_count }} Surat Overdue</h4>
+            <p class="text-sm text-gray-300">Melewati batas 24 jam – segera review</p>
         </div>
-    </a>
-    <a href="{{ url_for('add_surat', jenis='masuk') }}" class="flex items-center gap-4 bg-white border rounded-xl p-5 hover:shadow-md transition group">
-        <div class="bg-green-100 text-green-600 rounded-lg p-3 group-hover:bg-green-600 group-hover:text-white transition"><i class="fas fa-arrow-down text-lg"></i></div>
-        <div>
-            <p class="font-semibold text-gray-800">Buat Surat Masuk</p>
-            <p class="text-xs text-gray-500">Surat izin masuk barang baru</p>
-        </div>
+    </div>
+    <a href="{{ url_for('surat.surat_list', status='pending') }}" class="px-6 py-2.5 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white rounded-xl font-semibold transition-all shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 flex items-center gap-2">
+        Review <i class="fas fa-arrow-right text-sm"></i>
     </a>
 </div>
+{% endif %}
 
-<!-- Recent -->
-<div class="bg-white rounded-xl shadow-sm border overflow-hidden">
-    <div class="px-4 sm:px-5 py-4 border-b flex items-center justify-between">
-        <h3 class="font-semibold text-gray-700"><i class="fas fa-clock mr-2 text-blue-500"></i>Surat Terbaru</h3>
-        <a href="{{ url_for('surat_list') }}" class="text-sm text-blue-600 hover:underline">Lihat Semua &rarr;</a>
+<!-- ========================================= -->
+<!-- 4. MAIN CONTENT – 2 KOLOM ASIMETRIS -->
+<!-- ========================================= -->
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-10">
+    <!-- Kiri: Grafik (3 kolom) + Timeline (2 kolom) -> kita buat tumpuk -->
+    <div class="lg:col-span-3 space-y-6">
+        <!-- Chart Monthly -->
+        <div class="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 p-6 shadow-2xl shadow-black/10 hover:border-cyan-500/30 transition-all duration-300">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+                        <i class="fas fa-chart-line text-cyan-400"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white">Tren 6 Bulan</h3>
+                        <p class="text-xs text-gray-400">Perbandingan keluar & masuk</p>
+                    </div>
+                </div>
+                <div class="flex gap-3 text-xs">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-gradient-to-r from-rose-400 to-red-500"></span>Keluar</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500"></span>Masuk</span>
+                </div>
+            </div>
+            <div class="h-72">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Grafik Divisi (donut) + Statistik tambahan -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 p-6 shadow-2xl shadow-black/10 hover:border-violet-500/30 transition-all duration-300">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center">
+                        <i class="fas fa-users text-violet-400"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white">Per Divisi</h4>
+                        <p class="text-xs text-gray-400">Distribusi surat</p>
+                    </div>
+                </div>
+                <div class="h-48 flex items-center justify-center">
+                    <canvas id="divisiChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Quick Stats: Ringkasan harian / mingguan -->
+            <div class="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 p-6 shadow-2xl shadow-black/10 hover:border-emerald-500/30 transition-all duration-300">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center">
+                        <i class="fas fa-bolt text-emerald-400"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white">Aktivitas Hari Ini</h4>
+                        <p class="text-xs text-gray-400">{{ recent|length }} surat terakhir</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                        <span class="text-sm text-gray-300">Surat baru</span>
+                        <span class="font-bold text-white">{{ recent|selectattr('created_at', 'defined')|list|length }}</span>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                        <span class="text-sm text-gray-300">Status review</span>
+                        <span class="font-bold text-amber-400">{{ total_review }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-300">Disetujui</span>
+                        <span class="font-bold text-emerald-400">{{ total_approved }}</span>
+                    </div>
+                </div>
+                <!-- mini progress -->
+                <div class="mt-4 flex gap-1 h-1.5 w-full bg-slate-700 rounded-full overflow-hidden">
+                    <div class="h-full w-2/5 bg-rose-500 rounded-l-full"></div>
+                    <div class="h-full w-1/5 bg-amber-500"></div>
+                    <div class="h-full w-2/5 bg-emerald-500 rounded-r-full"></div>
+                </div>
+                <p class="text-[10px] text-gray-500 mt-1 text-center">Pending • Review • Approved</p>
+            </div>
+        </div>
     </div>
-    <!-- Desktop table -->
-    <div class="hidden md:block overflow-x-auto">
+
+    <!-- Kanan: Timeline Aktivitas (2 kolom) + Pending Approvals -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- Pending Approvals Widget -->
+        {% if pending_approvals %}
+        <div class="bg-gradient-to-br from-amber-500/10 to-orange-500/10 backdrop-blur-2xl rounded-3xl border border-amber-500/20 p-6 shadow-2xl shadow-amber-500/5">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-2xl bg-amber-500/20 flex items-center justify-center relative">
+                        <i class="fas fa-inbox text-amber-400"></i>
+                        <span class="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 rounded-full text-white text-[10px] font-bold flex items-center justify-center animate-pulse">{{ pending_approvals|length }}</span>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white">Menunggu Persetujuan</h4>
+                        <p class="text-xs text-gray-400">Segera konfirmasi</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('surat.surat_list', status='pending') }}" class="text-xs text-amber-400 hover:text-amber-300 transition">Lihat semua</a>
+            </div>
+            <div class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar">
+                {% for p in pending_approvals[:5] %}
+                <a href="{{ url_for('surat.view_surat', id=p.id) }}" class="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all group border border-transparent hover:border-amber-500/30">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 text-xs font-bold">{{ loop.index }}</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-white group-hover:text-amber-300 transition truncate">{{ p.no_surat }}</p>
+                        <p class="text-xs text-gray-400 truncate">{{ p.nama }} · {{ p.jenis|upper }}</p>
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">pending</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Timeline Aktivitas Terbaru (vertikal) -->
+        <div class="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 p-6 shadow-2xl shadow-black/10">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+                        <i class="fas fa-clock-rotate-left text-cyan-400"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white">Aktivitas Terbaru</h4>
+                        <p class="text-xs text-gray-400">Urutan waktu</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('surat.surat_list') }}" class="text-xs text-cyan-400 hover:text-cyan-300 transition">Lihat semua</a>
+            </div>
+            <div class="relative pl-6 border-l-2 border-cyan-500/20 space-y-4 max-h-64 overflow-y-auto custom-scrollbar">
+                {% for s in recent[:6] %}
+                <div class="relative group">
+                    <!-- titik timeline -->
+                    <div class="absolute -left-[1.7rem] top-1.5 w-3 h-3 rounded-full {{ 'bg-rose-400 shadow-lg shadow-rose-500/50' if s.jenis == 'keluar' else 'bg-emerald-400 shadow-lg shadow-emerald-500/50' }}"></div>
+                    <a href="{{ url_for('surat.view_surat', id=s.id) }}" class="block hover:bg-white/5 p-2 rounded-xl transition-all">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-white group-hover:text-cyan-300 transition">{{ s.no_surat }}</p>
+                                <p class="text-xs text-gray-400">{{ s.nama }} · {{ s.perusahaan }}</p>
+                            </div>
+                            <span class="text-[10px] px-2.5 py-0.5 rounded-full font-medium {{ 'bg-emerald-500/20 text-emerald-300' if s.status == 'approved' else 'bg-amber-500/20 text-amber-300' if s.status == 'review' else 'bg-gray-500/20 text-gray-300' }}">{{ s.status|title }}</span>
+                        </div>
+                        <div class="text-[10px] text-gray-500 mt-1 flex items-center gap-2">
+                            <i class="fas fa-calendar-day"></i>
+                            <span>{{ s.created_at.strftime('%d %b %Y, %H:%M') if s.created_at else '-' }}</span>
+                        </div>
+                    </a>
+                </div>
+                {% else %}
+                <div class="py-8 text-center text-gray-500">
+                    <i class="fas fa-inbox text-3xl opacity-20 block mb-2"></i>
+                    <p class="text-sm">Belum ada aktivitas</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================= -->
+<!-- 5. BAGIAN BAWAH: Pengajuan Saya (tabel dengan gaya modern) -->
+<!-- ========================================= -->
+<div class="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 p-6 shadow-2xl shadow-black/10">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center">
+                <i class="fas fa-user-check text-emerald-400"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-white">Pengajuan Saya</h4>
+                <p class="text-xs text-gray-400">{{ my_submissions|length }} total</p>
+            </div>
+        </div>
+        <a href="{{ url_for('surat.surat_list') }}" class="text-xs text-emerald-400 hover:text-emerald-300 transition">Lihat semua</a>
+    </div>
+    <div class="overflow-x-auto">
         <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
-                <tr>
-                    <th class="px-4 py-3 text-left">No. Surat</th>
-                    <th class="px-4 py-3 text-left">Jenis</th>
-                    <th class="px-4 py-3 text-left">Nama</th>
-                    <th class="px-4 py-3 text-left">Divisi</th>
-                    <th class="px-4 py-3 text-left">Status</th>
-                    <th class="px-4 py-3 text-left">Tanggal</th>
-                    <th class="px-4 py-3"></th>
+            <thead>
+                <tr class="text-left text-xs text-gray-400 border-b border-white/5">
+                    <th class="pb-3 font-medium">Nomor Surat</th>
+                    <th class="pb-3 font-medium">Jenis</th>
+                    <th class="pb-3 font-medium">Status</th>
+                    <th class="pb-3 font-medium text-right">Tanggal</th>
                 </tr>
             </thead>
-            <tbody class="divide-y">
-                {% for s in recent %}
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3 font-medium">{{ s.no_surat }}</td>
-                    <td class="px-4 py-3">
-                        {% if s.jenis == 'keluar' %}
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700"><i class="fas fa-arrow-up"></i> Keluar</span>
-                        {% else %}
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"><i class="fas fa-arrow-down"></i> Masuk</span>
-                        {% endif %}
+            <tbody class="divide-y divide-white/5">
+                {% for s in my_submissions[:8] %}
+                <tr class="hover:bg-white/5 transition-all duration-200">
+                    <td class="py-3 font-medium">
+                        <a href="{{ url_for('surat.view_surat', id=s.id) }}" class="text-emerald-400 hover:text-emerald-300 transition">{{ s.no_surat }}</a>
                     </td>
-                    <td class="px-4 py-3">{{ s.nama }}</td>
-                    <td class="px-4 py-3">{{ s.divisi }}</td>
-                    <td class="px-4 py-3">
-                        {% if s.status == 'approved' %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Disetujui</span>
-                        {% elif s.status == 'rejected' %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Ditolak</span>
-                        {% elif s.status == 'review' %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Review</span>
-                        {% else %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Pending</span>
-                        {% endif %}
+                    <td class="py-3">
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full {{ 'bg-rose-400' if s.jenis == 'keluar' else 'bg-emerald-400' }}"></span>
+                            {{ s.jenis|upper }}
+                        </span>
                     </td>
-                    <td class="px-4 py-3 text-gray-500">{{ s.tanggal }}</td>
-                    <td class="px-4 py-3">
-                        <a href="{{ url_for('view_surat', id=s.id) }}" class="text-blue-600 hover:underline text-xs">Detail</a>
+                    <td class="py-3">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold {{ 'bg-emerald-500/20 text-emerald-300' if s.status == 'approved' else 'bg-amber-500/20 text-amber-300' if s.status == 'review' else 'bg-gray-500/20 text-gray-300' }}">
+                            {% if s.status == 'approved' %}<i class="fas fa-check-circle"></i>{% elif s.status == 'review' %}<i class="fas fa-search"></i>{% else %}<i class="fas fa-clock"></i>{% endif %}
+                            {{ s.status|title }}
+                        </span>
+                    </td>
+                    <td class="py-3 text-right text-xs text-gray-400">
+                        {{ s.created_at.strftime('%d/%m/%Y') if s.created_at else '-' }}
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="7" class="px-5 py-8 text-center text-gray-400">Belum ada surat.</td></tr>
+                <tr>
+                    <td colspan="4" class="py-10 text-center text-gray-500">
+                        <i class="fas fa-file-circle-plus text-3xl opacity-20 block mb-2"></i>
+                        <p class="text-sm">Belum ada pengajuan</p>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    <!-- Mobile cards -->
-    <div class="md:hidden divide-y">
-        {% for s in recent %}
-        <a href="{{ url_for('view_surat', id=s.id) }}" class="block px-4 py-3 hover:bg-gray-50 transition">
-            <div class="flex items-center justify-between mb-1">
-                <span class="font-medium text-sm text-gray-800 truncate mr-2">{{ s.no_surat }}</span>
-                {% if s.jenis == 'keluar' %}
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700 flex-shrink-0"><i class="fas fa-arrow-up"></i> Keluar</span>
-                {% else %}
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 flex-shrink-0"><i class="fas fa-arrow-down"></i> Masuk</span>
-                {% endif %}
-            </div>
-            <div class="flex items-center justify-between text-xs text-gray-500">
-                <span>{{ s.nama }} &middot; {{ s.divisi }}</span>
-                {% if s.status == 'approved' %}
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700">Disetujui</span>
-                {% elif s.status == 'rejected' %}
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">Ditolak</span>
-                {% elif s.status == 'review' %}
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700">Review</span>
-                {% else %}
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-700">Pending</span>
-                {% endif %}
-            </div>
-            <p class="text-[10px] text-gray-400 mt-1">{{ s.tanggal }}</p>
-        </a>
-        {% else %}
-        <div class="px-4 py-8 text-center text-gray-400 text-sm">Belum ada surat.</div>
-        {% endfor %}
-    </div>
 </div>
+
+<style>
+/* Custom Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+}
+.animate-fade-in-up {
+    animation: fadeIn 0.6s ease-out forwards;
+}
+.stagger-children > * {
+    opacity: 0;
+    animation: fadeIn 0.6s ease-out forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.45s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.55s; }
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const monthlyData = {{ monthly | tojson }};
-const divisiData = {{ divisi_stats | tojson }};
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
 
-// Monthly chart
-if (monthlyData.length) {
-    new Chart(document.getElementById('monthlyChart'), {
+// Monthly Chart
+const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+const monthly = {{ monthly | tojson }};
+if (monthly && monthly.length) {
+    new Chart(monthlyCtx, {
         type: 'bar',
         data: {
-            labels: monthlyData.map(d => d.bulan),
+            labels: monthly.map(d => {
+                const [y, m] = d.bulan.split('-');
+                const names = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+                return names[m-1] + " '" + y.slice(2);
+            }),
             datasets: [
-                { label: 'Keluar', data: monthlyData.map(d => d.keluar), backgroundColor: '#ef4444', borderRadius: 6 },
-                { label: 'Masuk', data: monthlyData.map(d => d.masuk), backgroundColor: '#22c55e', borderRadius: 6 },
+                { 
+                    data: monthly.map(d => d.keluar), 
+                    backgroundColor: 'rgba(239,68,68,0.7)',
+                    borderColor: 'rgba(239,68,68,1)',
+                    borderWidth: 1.5,
+                    borderRadius: 8,
+                    hoverBackgroundColor: 'rgba(239,68,68,0.95)',
+                    barPercentage: 0.6,
+                },
+                { 
+                    data: monthly.map(d => d.masuk), 
+                    backgroundColor: 'rgba(16,185,129,0.7)',
+                    borderColor: 'rgba(16,185,129,1)',
+                    borderWidth: 1.5,
+                    borderRadius: 8,
+                    hoverBackgroundColor: 'rgba(16,185,129,0.95)',
+                    barPercentage: 0.6,
+                }
             ]
         },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { 
+                legend: { display: false },
+                tooltip: { backgroundColor: 'rgba(15,23,42,0.9)', titleColor: '#fff', bodyColor: '#cbd5e1' }
+            },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }
+            }
+        }
     });
 } else {
-    document.getElementById('monthlyChart').parentElement.innerHTML += '<p class="text-center text-gray-400 text-sm py-8">Belum ada data.</p>';
+    document.getElementById('monthlyChart').parentElement.innerHTML = '<div class="h-full flex items-center justify-center text-gray-400 text-sm"><i class="fas fa-chart-bar mr-2 opacity-50"></i>Belum ada data</div>';
 }
 
-// Divisi chart
-if (divisiData.length) {
-    const colors = ['#3b82f6','#ef4444','#22c55e','#f59e0b','#8b5cf6','#ec4899','#14b8a6'];
-    new Chart(document.getElementById('divisiChart'), {
+// Division Chart
+const divCtx = document.getElementById('divisiChart').getContext('2d');
+const divisi = {{ divisi_stats | tojson }};
+if (divisi && divisi.length) {
+    const colors = [
+        'rgba(59,130,246,0.8)', 'rgba(239,68,68,0.8)', 'rgba(16,185,129,0.8)',
+        'rgba(245,158,11,0.8)', 'rgba(139,92,246,0.8)', 'rgba(236,72,153,0.8)',
+        'rgba(20,184,166,0.8)'
+    ];
+    new Chart(divCtx, {
         type: 'doughnut',
         data: {
-            labels: divisiData.map(d => d.divisi),
-            datasets: [{ data: divisiData.map(d => d.total), backgroundColor: colors.slice(0, divisiData.length), borderWidth: 0 }]
+            labels: divisi.map(d => d.divisi),
+            datasets: [{ 
+                data: divisi.map(d => d.total), 
+                backgroundColor: colors.slice(0, divisi.length),
+                borderColor: colors.slice(0, divisi.length).map(c => c.replace('0.8', '1')),
+                borderWidth: 2,
+                hoverOffset: 10
+            }]
         },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { 
+                    position: 'bottom', 
+                    labels: { 
+                        padding: 12, 
+                        usePointStyle: true, 
+                        pointStyle: 'circle',
+                        color: '#94a3b8',
+                        font: { size: 10 }
+                    } 
+                }
+            }
+        }
     });
 } else {
-    document.getElementById('divisiChart').parentElement.innerHTML += '<p class="text-center text-gray-400 text-sm py-8">Belum ada data.</p>';
+    document.getElementById('divisiChart').parentElement.innerHTML = '<div class="h-full flex items-center justify-center text-gray-400 text-sm"><i class="fas fa-chart-pie mr-2 opacity-50"></i>Belum ada data</div>';
 }
 </script>
 {% endblock %}

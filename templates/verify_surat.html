@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Verifikasi Surat - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-qrcode"></i> Verifikasi Surat Izin</h4>
+                </div>
+                <div class="card-body">
+                    {% if is_valid %}
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-check-circle"></i> Surat ASLI</h5>
+                        <p class="mb-0">Surat ini adalah dokumen ASLI dan terverifikasi dalam sistem.</p>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Surat Tidak Valid</h5>
+                        <p class="mb-0">Dokumen ini tidak dapat diverifikasi. Hubungi pihak terkait.</p>
+                    </div>
+                    {% endif %}
+
+                    <table class="table table-bordered mt-4">
+                        <tr>
+                            <th width="35%">No. Surat</th>
+                            <td><strong>{{ surat.no_surat }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Jenis</th>
+                            <td>
+                                {% if surat.jenis == 'keluar' %}
+                                <span class="badge bg-danger">SURAT KELUAR</span>
+                                {% else %}
+                                <span class="badge bg-success">SURAT MASUK</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Nama Pemohon</th>
+                            <td>{{ surat.nama }}</td>
+                        </tr>
+                        <tr>
+                            <th>Perusahaan</th>
+                            <td>{{ surat.perusahaan }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tanggal</th>
+                            <td>{{ surat.tanggal }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status</th>
+                            <td>
+                                {% if status_label == 'Disetujui' %}
+                                <span class="badge bg-success">{{ status_label }}</span>
+                                {% elif status_label == 'Ditolak' %}
+                                <span class="badge bg-danger">{{ status_label }}</span>
+                                {% elif status_label == 'Sedang Direview' %}
+                                <span class="badge bg-warning">{{ status_label }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ status_label }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+
+                    <hr>
+                    <h6><i class="fas fa-history"></i> Status Approval</h6>
+                    <div class="mt-3">
+                        {% set ns = namespace(approved_count=0) %}
+
+                        {% if surat.approval_user == 'sesuai' %}
+                        <span class="badge bg-success mb-2"><i class="fas fa-check"></i> User/Pemberi Kerja</span>
+                        {% set ns.approved_count = ns.approved_count + 1 %}
+                        {% endif %}
+
+                        {% if surat.approval_satpam == 'sesuai' %}
+                        <span class="badge bg-success mb-2"><i class="fas fa-check"></i> Satpam</span>
+                        {% set ns.approved_count = ns.approved_count + 1 %}
+                        {% endif %}
+
+                        {% if surat.approval_asman == 'approved' %}
+                        <span class="badge bg-success mb-2"><i class="fas fa-check"></i> Asman Umum</span>
+                        {% set ns.approved_count = ns.approved_count + 1 %}
+                        {% endif %}
+
+                        {% if surat.approval_manager == 'approved' %}
+                        <span class="badge bg-success mb-2"><i class="fas fa-check"></i> Manager</span>
+                        {% set ns.approved_count = ns.approved_count + 1 %}
+                        {% endif %}
+
+                        {% if ns.approved_count == 0 %}
+                        <span class="badge bg-secondary">Belum ada approval</span>
+                        {% endif %}
+
+                        <p class="mt-2 text-muted small">
+                            {{ ns.approved_count }}/4 stage telah disetujui
+                        </p>
+                    </div>
+                </div>
+                <div class="card-footer text-center text-muted">
+                    <small>
+                        <i class="fas fa-shield-alt"></i>
+                        Dokumen ini diverifikasi oleh sistem PT PLN Indonesia Power UBP Jawa Tengah 2 Adipala
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

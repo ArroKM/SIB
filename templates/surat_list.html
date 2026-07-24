@@ -1,112 +1,227 @@
 {% extends "base.html" %}
 {% block title %}Daftar Surat - {{ app_name }}{% endblock %}
+{% block page_icon %}fa-list-alt{% endblock %}
+{% block page_title %}Daftar Surat{% endblock %}
+{% block page_subtitle %}Kelola surat izin keluar masuk barang{% endblock %}
 
 {% block content %}
-<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-    <div>
-        <h2 class="text-2xl font-bold text-gray-800">Daftar Surat Izin</h2>
-        <p class="text-gray-500 text-sm mt-1">Kelola surat izin keluar &amp; masuk barang</p>
+<!-- Page Header -->
+<div class="mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold mb-1">
+                <i class="fas fa-list-alt mr-2 text-blue-400"></i>
+                Daftar Surat Izin
+            </h1>
+            <p class="text-gray-400">Kelola surat izin keluar & masuk barang</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{{ url_for('surat.add_surat', jenis='keluar') }}" class="btn btn-danger">
+                <i class="fas fa-arrow-up mr-2"></i>
+                Surat Keluar
+            </a>
+            <a href="{{ url_for('surat.add_surat', jenis='masuk') }}" class="btn btn-success">
+                <i class="fas fa-arrow-down mr-2"></i>
+                Surat Masuk
+            </a>
+        </div>
     </div>
-    <div class="flex gap-2">
-        <a href="{{ url_for('add_surat', jenis='keluar') }}" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-            <i class="fas fa-arrow-up"></i> Surat Keluar
-        </a>
-        <a href="{{ url_for('add_surat', jenis='masuk') }}" class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-            <i class="fas fa-arrow-down"></i> Surat Masuk
-        </a>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="card p-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <i class="fas fa-file-alt text-blue-400"></i>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Total Surat</p>
+                <p class="text-xl font-bold">{{ surat_list|length }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="card p-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                <i class="fas fa-clock text-amber-400"></i>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Pending</p>
+                <p class="text-xl font-bold">{{ surat_list|selectattr('status', 'equalto', 'pending')|list|length }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="card p-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                <i class="fas fa-check text-emerald-400"></i>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Disetujui</p>
+                <p class="text-xl font-bold">{{ surat_list|selectattr('status', 'equalto', 'approved')|list|length }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="card p-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-rose-500/20 flex items-center justify-center">
+                <i class="fas fa-times text-rose-400"></i>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Ditolak</p>
+                <p class="text-xl font-bold">{{ surat_list|selectattr('status', 'equalto', 'rejected')|list|length }}</p>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Filters -->
-<div class="bg-white rounded-xl shadow-sm border p-4 mb-6">
-    <form method="GET" class="flex flex-col sm:flex-row gap-3">
-        <input type="text" name="q" value="{{ search }}" placeholder="Cari no. surat, nama, perusahaan..."
-               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-        <select name="jenis" class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
-            <option value="">Semua Jenis</option>
-            <option value="keluar" {{ 'selected' if jenis=='keluar' }}>Keluar</option>
-            <option value="masuk" {{ 'selected' if jenis=='masuk' }}>Masuk</option>
-        </select>
-        <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
-            <option value="">Semua Status</option>
-            <option value="pending" {{ 'selected' if status=='pending' }}>Pending</option>
-            <option value="review" {{ 'selected' if status=='review' }}>Review</option>
-            <option value="approved" {{ 'selected' if status=='approved' }}>Disetujui</option>
-            <option value="rejected" {{ 'selected' if status=='rejected' }}>Ditolak</option>
-        </select>
-        <button type="submit" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition">
-            <i class="fas fa-search"></i> Cari
-        </button>
-        {% if search or jenis or status %}
-        <a href="{{ url_for('surat_list') }}" class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg transition">
-            <i class="fas fa-times"></i> Reset
-        </a>
-        {% endif %}
+<div class="card mb-6">
+    <form method="GET" id="filterForm" class="flex flex-col sm:flex-row gap-4 items-end">
+        <div class="flex-1">
+            <label class="form-label">
+                <i class="fas fa-search mr-1 text-gray-400"></i>
+                Pencarian
+            </label>
+            <input type="text" name="q" id="searchInput" value="{{ search }}" placeholder="Cari no. surat, nama, perusahaan, badge..."
+                   class="form-input">
+        </div>
+        <div class="w-full sm:w-40">
+            <label class="form-label">
+                <i class="fas fa-filter mr-1 text-gray-400"></i>
+                Jenis
+            </label>
+            <select name="jenis" id="jenisSelect" class="form-select">
+                <option value="">Semua</option>
+                <option value="keluar" {{ 'selected' if jenis=='keluar' }}>Keluar</option>
+                <option value="masuk" {{ 'selected' if jenis=='masuk' }}>Masuk</option>
+            </select>
+        </div>
+        <div class="w-full sm:w-40">
+            <label class="form-label">
+                <i class="fas fa-flag mr-1 text-gray-400"></i>
+                Status
+            </label>
+            <select name="status" id="statusSelect" class="form-select">
+                <option value="">Semua</option>
+                <option value="pending" {{ 'selected' if status=='pending' }}>Pending</option>
+                <option value="review" {{ 'selected' if status=='review' }}>Review</option>
+                <option value="approved" {{ 'selected' if status=='approved' }}>Disetujui</option>
+                <option value="rejected" {{ 'selected' if status=='rejected' }}>Ditolak</option>
+            </select>
+        </div>
+        <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i>
+                Cari
+            </button>
+            {% if search or jenis or status %}
+            <a href="{{ url_for('surat.surat_list') }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+            </a>
+            {% endif %}
+        </div>
     </form>
 </div>
 
-<!-- Table -->
-<div class="bg-white rounded-xl shadow-sm border overflow-hidden">
-    <!-- Desktop table -->
-    <div class="hidden md:block overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+<!-- Surat List -->
+{% if surat_list %}
+<!-- Desktop View -->
+<div class="hidden lg:block card overflow-hidden">
+    <div class="card-header">
+        <h3 class="font-semibold flex items-center gap-2">
+            <i class="fas fa-table text-blue-400"></i>
+            Daftar Surat
+        </h3>
+        <span class="text-sm text-gray-400">{{ surat_list|length }} surat ditemukan</span>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="whitespace-nowrap">
+            <thead>
                 <tr>
-                    <th class="px-4 py-3 text-left">No. Surat</th>
-                    <th class="px-4 py-3 text-left">Jenis</th>
-                    <th class="px-4 py-3 text-left">Tanggal</th>
-                    <th class="px-4 py-3 text-left">Nama</th>
-                    <th class="px-4 py-3 text-left">Divisi</th>
-                    <th class="px-4 py-3 text-left">Perusahaan</th>
-                    <th class="px-4 py-3 text-left">Status</th>
-                    <th class="px-4 py-3 text-center">Aksi</th>
+                    <th>No. Surat</th>
+                    <th>Jenis</th>
+                    <th>Tanggal</th>
+                    <th>Nama Pemohon</th>
+                    <th>Badge</th>
+                    <th>Divisi</th>
+                    <th>Perusahaan</th>
+                    <th>No. Kendaraan</th>
+                    <th>No. SPK</th>
+                    <th>Status</th>
+                    <th class="text-center">Aksi</th>
                 </tr>
             </thead>
-            <tbody class="divide-y">
+            <tbody>
                 {% for s in surat_list %}
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="px-4 py-3 font-medium text-gray-800">{{ s.no_surat }}</td>
-                    <td class="px-4 py-3">
-                        {% if s.jenis == 'keluar' %}
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700"><i class="fas fa-arrow-up"></i> Keluar</span>
-                        {% else %}
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"><i class="fas fa-arrow-down"></i> Masuk</span>
-                        {% endif %}
-                    </td>
-                    <td class="px-4 py-3 text-gray-500">{{ s.tanggal }}</td>
-                    <td class="px-4 py-3">{{ s.nama }}</td>
-                    <td class="px-4 py-3">{{ s.divisi }}</td>
-                    <td class="px-4 py-3">{{ s.perusahaan }}</td>
-                    <td class="px-4 py-3">
-                        {% if s.status == 'approved' %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Disetujui</span>
-                        {% elif s.status == 'rejected' %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Ditolak</span>
-                        {% elif s.status == 'review' %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Review</span>
-                        {% else %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Pending</span>
-                        {% endif %}
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="flex items-center justify-center gap-2">
-                            <a href="{{ url_for('view_surat', id=s.id) }}" class="text-blue-600 hover:text-blue-800" title="Lihat"><i class="fas fa-eye"></i></a>
-                            <a href="{{ url_for('edit_surat', id=s.id) }}" class="text-yellow-600 hover:text-yellow-800" title="Edit"><i class="fas fa-edit"></i></a>
-                            <a href="{{ url_for('export_pdf', id=s.id) }}" class="text-purple-600 hover:text-purple-800" title="PDF"><i class="fas fa-file-pdf"></i></a>
-                            {% if current_user.role in ('admin','manager') %}
-                            <a href="{{ url_for('delete_surat', id=s.id) }}" class="text-red-600 hover:text-red-800" title="Hapus"
-                               onclick="return confirm('Hapus surat ini?')"><i class="fas fa-trash"></i></a>
-                            {% endif %}
+                <tr class="hover:bg-white/5 transition">
+                    <td>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-blue-400">{{ s.no_surat }}</span>
                         </div>
                     </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="8" class="px-5 py-12 text-center">
-                        <div class="text-gray-400">
-                            <i class="fas fa-inbox text-4xl mb-3"></i>
-                            <p class="text-lg font-medium">Belum ada surat</p>
-                            <p class="text-sm mt-1">Buat surat baru untuk memulai</p>
+                    <td>
+                        <span class="badge {{ s.jenis }}">
+                            <i class="fas fa-{{ 'arrow-up' if s.jenis == 'keluar' else 'arrow-down' }}"></i>
+                            {{ s.jenis | upper }}
+                        </span>
+                    </td>
+                    <td class="text-gray-400">{{ s.tanggal }}</td>
+                    <td>
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-xs font-bold">
+                                {{ s.nama[0] | upper if s.nama else '?' }}
+                            </div>
+                            <span>{{ s.nama }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="bg-white/10 px-2 py-1 rounded text-xs">{{ s.badge or '-' }}</span>
+                    </td>
+                    <td>
+                        <span class="text-xs">{{ s.divisi }}</span>
+                    </td>
+                    <td>
+                        <span class="text-sm truncate max-w-[150px]" title="{{ s.perusahaan }}">{{ s.perusahaan }}</span>
+                    </td>
+                    <td class="text-gray-400 text-sm">{{ s.no_kendaraan or '-' }}</td>
+                    <td class="text-gray-400 text-sm">{{ s.no_spk or '-' }}</td>
+                    <td>
+                        {% if s.status == 'approved' %}
+                        <span class="badge approved">
+                            <i class="fas fa-check-circle"></i> Disetujui
+                        </span>
+                        {% elif s.status == 'rejected' %}
+                        <span class="badge rejected">
+                            <i class="fas fa-times-circle"></i> Ditolak
+                        </span>
+                        {% elif s.status == 'review' %}
+                        <span class="badge review">
+                            <i class="fas fa-search"></i> Review
+                        </span>
+                        {% else %}
+                        <span class="badge pending">
+                            <i class="fas fa-clock"></i> Pending
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="flex items-center justify-center gap-2">
+                            <a href="{{ url_for('surat.view_surat', id=s.id) }}" class="action-btn view" title="Lihat">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ url_for('surat.edit_surat', id=s.id) }}" class="action-btn edit" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{ url_for('surat.export_pdf', id=s.id) }}" class="action-btn pdf" title="Export PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                            {% if current_user.role in ('admin','manager') %}
+                            <button onclick="confirmDelete({{ s.id }}, '{{ s.no_surat }}')" class="action-btn delete" title="Hapus">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
@@ -114,61 +229,182 @@
             </tbody>
         </table>
     </div>
-    <!-- Mobile cards -->
-    <div class="md:hidden divide-y">
-        {% for s in surat_list %}
-        <div class="px-4 py-3">
-            <div class="flex items-start justify-between gap-2 mb-2">
-                <div class="min-w-0">
-                    <p class="font-semibold text-sm text-gray-800 truncate">{{ s.no_surat }}</p>
-                    <p class="text-xs text-gray-500 mt-0.5">{{ s.nama }} &middot; {{ s.perusahaan }}</p>
-                </div>
-                {% if s.jenis == 'keluar' %}
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700 flex-shrink-0"><i class="fas fa-arrow-up"></i> Keluar</span>
-                {% else %}
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 flex-shrink-0"><i class="fas fa-arrow-down"></i> Masuk</span>
-                {% endif %}
-            </div>
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2 text-xs text-gray-500">
-                    <span>{{ s.divisi }}</span>
-                    <span>&middot;</span>
-                    <span>{{ s.tanggal }}</span>
-                    <span>&middot;</span>
-                    {% if s.status == 'approved' %}
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700">Disetujui</span>
-                    {% elif s.status == 'rejected' %}
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">Ditolak</span>
-                    {% elif s.status == 'review' %}
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700">Review</span>
-                    {% else %}
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-700">Pending</span>
-                    {% endif %}
-                </div>
-                <div class="flex items-center gap-3">
-                    <a href="{{ url_for('view_surat', id=s.id) }}" class="text-blue-600" title="Lihat"><i class="fas fa-eye text-sm"></i></a>
-                    <a href="{{ url_for('edit_surat', id=s.id) }}" class="text-yellow-600" title="Edit"><i class="fas fa-edit text-sm"></i></a>
-                    <a href="{{ url_for('export_pdf', id=s.id) }}" class="text-purple-600" title="PDF"><i class="fas fa-file-pdf text-sm"></i></a>
-                    {% if current_user.role in ('admin','manager') %}
-                    <a href="{{ url_for('delete_surat', id=s.id) }}" class="text-red-600" title="Hapus" onclick="return confirm('Hapus surat ini?')"><i class="fas fa-trash text-sm"></i></a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div class="px-4 py-12 text-center">
-            <div class="text-gray-400">
-                <i class="fas fa-inbox text-4xl mb-3"></i>
-                <p class="text-lg font-medium">Belum ada surat</p>
-                <p class="text-sm mt-1">Buat surat baru untuk memulai</p>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% if surat_list %}
-    <div class="px-4 py-3 border-t bg-gray-50 text-xs text-gray-500">
-        Menampilkan {{ surat_list|length }} surat
-    </div>
-    {% endif %}
 </div>
+
+<!-- Tablet/Mobile View -->
+<div class="lg:hidden space-y-4">
+    {% for s in surat_list %}
+    <div class="card p-4 hover:bg-white/5 transition">
+        <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br {{ 'from-red-500/20 to-red-600/10' if s.jenis == 'keluar' else 'from-emerald-500/20 to-emerald-600/10' }} flex items-center justify-center">
+                    <i class="fas fa-{{ 'arrow-up text-red-400' if s.jenis == 'keluar' else 'arrow-down text-emerald-400' }}"></i>
+                </div>
+                <div>
+                    <p class="font-bold text-white">{{ s.no_surat }}</p>
+                    <p class="text-xs text-gray-400">
+                        <i class="fas fa-calendar mr-1"></i>{{ s.tanggal }}
+                    </p>
+                </div>
+            </div>
+            {% if s.status == 'approved' %}
+            <span class="badge approved text-xs">
+                <i class="fas fa-check-circle"></i>
+            </span>
+            {% elif s.status == 'rejected' %}
+            <span class="badge rejected text-xs">
+                <i class="fas fa-times-circle"></i>
+            </span>
+            {% elif s.status == 'review' %}
+            <span class="badge review text-xs">
+                <i class="fas fa-search"></i>
+            </span>
+            {% else %}
+            <span class="badge pending text-xs">
+                <i class="fas fa-clock"></i>
+            </span>
+            {% endif %}
+        </div>
+
+        <div class="space-y-2 mb-4">
+            <div class="flex items-center gap-2 text-sm">
+                <i class="fas fa-user text-gray-500 w-5"></i>
+                <span>{{ s.nama }}</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+                <i class="fas fa-building text-gray-500 w-5"></i>
+                <span>{{ s.perusahaan }}</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-400">
+                <i class="fas fa-id-badge w-5"></i>
+                <span>{{ s.badge or '-' }}</span>
+                <span class="mx-2">·</span>
+                <i class="fas fa-car w-5"></i>
+                <span>{{ s.no_kendaraan or '-' }}</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 pt-3 border-t border-white/10">
+            <a href="{{ url_for('surat.view_surat', id=s.id) }}" class="btn btn-secondary btn-sm flex-1">
+                <i class="fas fa-eye mr-1"></i> Lihat
+            </a>
+            <a href="{{ url_for('surat.edit_surat', id=s.id) }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-edit"></i>
+            </a>
+            <a href="{{ url_for('surat.export_pdf', id=s.id) }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-file-pdf"></i>
+            </a>
+            {% if current_user.role in ('admin','manager') %}
+            <button onclick="confirmDelete({{ s.id }}, '{{ s.no_surat }}')" class="btn btn-danger btn-sm">
+                <i class="fas fa-trash"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="card p-12 text-center">
+    <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-500/20 to-violet-500/20 flex items-center justify-center">
+        <i class="fas fa-folder-open text-gray-400 text-4xl"></i>
+    </div>
+    <h3 class="text-xl font-bold mb-2">Belum Ada Surat</h3>
+    <p class="text-gray-400 mb-6">
+        {% if search or jenis or status %}
+        Tidak ada surat yang sesuai dengan pencarian Anda.
+        {% else %}
+        Buat surat pertama Anda untuk memulai.
+        {% endif %}
+    </p>
+    <a href="{{ url_for('surat.add_surat', jenis='keluar') }}" class="btn btn-primary">
+        <i class="fas fa-plus mr-2"></i>
+        Buat Surat Baru
+    </a>
+</div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <div class="modal-header-content">
+                <div class="modal-header-icon red">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="modal-header-text">
+                    <h3>Konfirmasi Hapus</h3>
+                    <p>Hapus surat izin</p>
+                </div>
+            </div>
+            <button onclick="closeDeleteModal()" class="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="bg-rose-500/10 border border-rose-500/20 rounded-lg p-4 mb-4">
+                <p class="text-gray-300 mb-2">Apakah Anda yakin ingin menghapus surat ini?</p>
+                <p class="text-sm text-gray-400">No. Surat: <strong class="text-white" id="deleteNoSurat"></strong></p>
+            </div>
+            <p class="text-xs text-rose-400">
+                <i class="fas fa-exclamation-circle mr-1"></i>
+                Tindakan ini tidak dapat dibatalkan.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" onclick="closeDeleteModal()" class="btn btn-secondary">
+                <i class="fas fa-times mr-2"></i>
+                Batal
+            </button>
+            <a href="#" id="deleteLink" class="btn btn-danger">
+                <i class="fas fa-trash mr-2"></i>
+                Ya, Hapus
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-submit filter form
+let searchTimeout = null;
+
+document.getElementById('searchInput')?.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        document.getElementById('filterForm').submit();
+    }, 500);
+});
+
+document.getElementById('jenisSelect')?.addEventListener('change', function() {
+    document.getElementById('filterForm').submit();
+});
+
+document.getElementById('statusSelect')?.addEventListener('change', function() {
+    document.getElementById('filterForm').submit();
+});
+
+// Delete confirmation
+function confirmDelete(id, noSurat) {
+    document.getElementById('deleteNoSurat').textContent = noSurat;
+    document.getElementById('deleteLink').href = '{{ url_for("surat.delete_surat", id=0) }}'.replace('/0/', '/' + id + '/');
+    document.getElementById('deleteModal').classList.add('active');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+}
+
+// Close modal on outside click
+document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeDeleteModal();
+});
+</script>
 {% endblock %}

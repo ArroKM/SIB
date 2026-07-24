@@ -3,264 +3,968 @@
 <head>
 <meta charset="UTF-8">
 <style>
-    @page { size: A4; margin: 15mm 18mm; }
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10pt; color: #1a1a1a; line-height: 1.5; margin: 0; }
-    .header { text-align: center; border-bottom: 3px solid #1e40af; padding-bottom: 12px; margin-bottom: 18px; }
-    .header h1 { font-size: 15pt; margin: 0 0 2px; color: #1e40af; letter-spacing: 1px; }
-    .header h2 { font-size: 10pt; margin: 0 0 4px; color: #444; font-weight: normal; }
-    .header h3 { font-size: 12pt; margin: 8px 0 0; color: #1e40af; }
-    .doc-meta { display: flex; justify-content: space-between; font-size: 8pt; color: #666; margin-bottom: 14px; }
-    .doc-meta div { line-height: 1.6; }
-    .info-box { background: #f0f5ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; }
-    .info-box table { width: 100%; }
-    .info-box td { padding: 2px 0; font-size: 9.5pt; }
-    .section-title { font-size: 10pt; font-weight: bold; color: #1e40af; margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #dbeafe; }
-    .data-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-    .data-table th { background: #1e40af; color: #fff; font-size: 8.5pt; text-transform: uppercase; padding: 7px 10px; text-align: left; }
-    .data-table td { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; font-size: 9.5pt; }
-    .data-table tr:nth-child(even) td { background: #f9fafb; }
-    .barang-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-    .barang-table th { background: #dbeafe; color: #1e40af; font-size: 8.5pt; text-transform: uppercase; padding: 7px 8px; text-align: center; border: 1px solid #bfdbfe; }
-    .barang-table td { padding: 6px 8px; border: 1px solid #e5e7eb; font-size: 9.5pt; }
-    .signature-container { margin-top: 24px; }
-    .sig-row { display: flex; justify-content: space-between; gap: 8px; }
-    .sig-box { text-align: center; flex: 1; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 4px; position: relative; }
-    .sig-box .sig-title { font-size: 7pt; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-    .sig-box .sig-status { font-size: 7pt; margin-bottom: 4px; }
-    .sig-box .sig-date { font-size: 6.5pt; color: #9ca3af; margin-bottom: 2px; }
-    .sig-box .sig-line { border-top: 2px solid #1e40af; margin: 0 10px; }
-    .sig-box .sig-name { font-size: 7.5pt; font-weight: bold; margin-top: 4px; }
-    .sig-box .sig-role { font-size: 6.5pt; color: #6b7280; }
-    /* Stamp styles for approval */
-    .stamp { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 7.5pt; font-weight: bold; letter-spacing: 0.5px; border: 2px solid; transform: rotate(-3deg); margin: 4px 0; }
-    .stamp-green { background: rgba(22, 163, 74, 0.12); color: #16a34a; border-color: #16a34a; }
-    .stamp-red { background: rgba(220, 38, 38, 0.12); color: #dc2626; border-color: #dc2626; }
-    .stamp-pending { background: rgba(156, 163, 175, 0.1); color: #9ca3af; border-color: #d1d5db; font-weight: normal; transform: none; }
-    .footer { text-align: center; font-size: 7.5pt; color: #9ca3af; margin-top: 20px; padding-top: 8px; border-top: 1px solid #e5e7eb; }
+    @page { size: A4; margin: 10mm 12mm; }
+    * { box-sizing: border-box; }
+    body { font-family: Inter, Segoe UI, -apple-system, BlinkMacSystemFont, sans-serif; font-size: 9.5pt; color: #1a1a2e; line-height: 1.5; margin: 0; padding: 0; }
+
+    .header {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0ea5e9 100%);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px 12px 0 0;
+        margin-bottom: 0;
+        position: relative;
+        overflow: hidden;
+    }
+    .header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+    .header::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -5%;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(14,165,233,0.3) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 1;
+    }
+    .header-logo {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .header-logo-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(14,165,233,0.4);
+    }
+    .header-logo-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    .header-title h1 {
+        font-size: 13pt;
+        font-weight: 800;
+        margin: 0;
+        letter-spacing: 0.5px;
+    }
+    .header-title p {
+        font-size: 7pt;
+        margin: 2px 0 0;
+        opacity: 0.85;
+    }
+    .header-badge {
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.25);
+        backdrop-filter: blur(10px);
+        border-radius: 10px;
+        padding: 8px 16px;
+        text-align: center;
+    }
+    .header-badge-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .header-badge-qr {
+        background: white;
+        border-radius: 8px;
+        padding: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .header-badge-qr img {
+        display: block;
+        width: 48px;
+        height: 48px;
+    }
+        backdrop-filter: blur(10px);
+        border-radius: 10px;
+        padding: 8px 16px;
+        text-align: center;
+    }
+    .header-badge .type {
+        font-size: 10pt;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+    .header-badge .sub {
+        font-size: 6pt;
+        opacity: 0.8;
+        text-transform: uppercase;
+        margin-top: 2px;
+    }
+    .header-meta {
+        display: flex;
+        justify-content: space-between;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 8pt;
+        position: relative;
+        z-index: 1;
+    }
+    .header-meta-item { text-align: center; flex: 1; }
+    .header-meta-label { opacity: 0.75; font-size: 6pt; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px; }
+    .header-meta-value { font-weight: 600; font-size: 8pt; }
+
+    .page-container {
+        min-height: calc(297mm - 20mm);
+        display: flex;
+        flex-direction: column;
+    }
+    .page-content {
+        flex: 1;
+    }
+
+    .info-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        padding: 16px 20px;
+        border-radius: 0 0 12px 12px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+
+    .section {
+        margin-bottom: 24px;
+    }
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        border-bottom: 3px solid #0ea5e9;
+    }
+    .section-icon {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 16px;
+        box-shadow: 0 4px 12px rgba(14,165,233,0.3);
+    }
+    .section-title {
+        font-size: 11pt;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
+
+    .data-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+    }
+    .data-item {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 14px 16px;
+        transition: all 0.2s;
+    }
+    .data-label {
+        font-size: 7pt;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 6px;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+    .data-value {
+        font-size: 10pt;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .download-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        color: white;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-size: 9pt;
+        font-weight: 600;
+        text-decoration: none;
+        box-shadow: 0 4px 12px rgba(14,165,233,0.35);
+        transition: all 0.2s;
+    }
+    .download-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(14,165,233,0.45);
+    }
+
+    .ktp-image-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .ktp-image {
+        max-width: 100px;
+        max-height: 65px;
+        border-radius: 8px;
+        border: 2px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .table-container {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+        color: white;
+        font-size: 8pt;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 14px;
+        text-align: left;
+        font-weight: 600;
+    }
+    td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 9pt;
+        vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #fafbfc; }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 7pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .badge-success { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #16a34a; }
+    .badge-danger { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #dc2626; }
+    .badge-warning { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #d97706; }
+    .badge-info { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #2563eb; }
+    .badge-gray { background: #f1f5f9; color: #64748b; }
+
+    .foto-thumb {
+        display: inline-flex;
+        gap: 2px;
+        flex-wrap: wrap;
+        align-items: center;
+        max-width: 80px;
+    }
+    .foto-thumb img {
+        width: 24px;
+        height: 24px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+    }
+    .foto-thumb .more-count {
+        font-size: 6pt;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 2px 4px;
+        border-radius: 3px;
+    }
+
+    .sig-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .sig-row-center {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+    }
+    .sig-row-center .sig-box {
+        flex: 0 0 auto;
+        width: 200px;
+    }
+    .sig-check {
+        color: #16a34a;
+        font-weight: bold;
+        margin-left: 6px;
+    }
+    .sig-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    .sig-box-header span:first-child {
+        flex: 1;
+    }
+    .sig-box-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .signature-section {
+        margin-top: 24px;
+    }
+    .sig-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+    }
+    .sig-box {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 10px 8px;
+        text-align: center;
+        background: white;
+        min-height: 140px;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.2s;
+    }
+    .sig-box-header {
+        font-size: 7pt;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .sig-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 70px;
+    }
+    .sig-stamp {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 7.5pt;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        border: 2px solid;
+        margin-bottom: 6px;
+        transform: rotate(-2deg);
+    }
+    .sig-stamp-green { background: rgba(22, 163, 74, 0.1); color: #16a34a; border-color: #16a34a; }
+    .sig-stamp-red { background: rgba(220, 38, 38, 0.1); color: #dc2626; border-color: #dc2626; }
+    .sig-stamp-pending { background: rgba(148, 163, 164, 0.1); color: #6b7280; border-color: #94a3b8; transform: none; }
+    .sig-date { font-size: 6.5pt; color: #94a3b8; margin-top: 4px; }
+    .sig-line {
+        width: 80%;
+        border-top: 2px solid #0f172a;
+        margin: 8px auto 6px;
+    }
+    .sig-name { font-size: 8pt; font-weight: 700; color: #1e293b; }
+
+    .notes-box {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        border: 1px solid #fcd34d;
+        border-radius: 12px;
+        padding: 18px;
+        margin-top: 24px;
+    }
+    .notes-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10pt;
+        font-weight: 700;
+        color: #92400e;
+        margin-bottom: 12px;
+    }
+    .notes-list {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 8.5pt;
+        color: #78350f;
+        line-height: 1.9;
+    }
+
+    .footer {
+        margin-top: auto;
+        padding: 14px 0 0;
+        border-top: 2px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 7.5pt;
+        color: #94a3b8;
+    }
+    .footer-left { font-weight: 600; color: #64748b; }
+    .footer-right { text-align: right; }
+
     .page-break { page-break-before: always; }
-    .foto-box { border: 2px dashed #d1d5db; border-radius: 8px; padding: 12px; text-align: center; margin-top: 10px; }
-    .foto-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-    .foto-grid img { border-radius: 6px; object-fit: contain; }
-    /* 1 photo: max 240px tall; 2 photos: side by side ~48%; 3+: smaller grid */
-    .foto-1 img { max-width: 100%; max-height: 240px; }
-    .foto-2 img { max-width: 48%; max-height: 200px; }
-    .foto-3 img, .foto-4 img { max-width: 46%; max-height: 160px; }
-    .foto-many img { max-width: 30%; max-height: 130px; }
-    .badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 8pt; font-weight: bold; }
-    .badge-keluar { background: #fee2e2; color: #dc2626; }
-    .badge-masuk { background: #dcfce7; color: #16a34a; }
+
+    .foto-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 14px;
+    }
+    .foto-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .foto-item img {
+        width: 100%;
+        object-fit: cover;
+    }
+    .foto-item-label {
+        padding: 8px 10px;
+        font-size: 7pt;
+        font-weight: 600;
+        color: #1e3a5f;
+        text-align: center;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+    }
+    .foto-layout-1 .foto-item { width: 60%; }
+    .foto-layout-1 .foto-item img { height: 220px; }
+    .foto-layout-2 .foto-item { width: 48%; }
+    .foto-layout-2 .foto-item img { height: 180px; }
+    .foto-layout-3 .foto-item { width: 32%; }
+    .foto-layout-3 .foto-item img { height: 150px; }
+    .foto-layout-4 .foto-item { width: 24%; }
+    .foto-layout-4 .foto-item img { height: 130px; }
+    .foto-layout-5plus .foto-item { width: 19%; }
+    .foto-layout-5plus .foto-item img { height: 110px; }
 </style>
 </head>
 <body>
+
 <!-- PAGE 1 -->
+<div class="page-container">
+<div class="page-content">
 <div class="header">
-    <h1>PT PLN INDONESIA POWER</h1>
-    <h2>Indonesia Power Integrated Management System</h2>
-    <h3>SURAT IZIN {{ 'KELUAR' if surat.jenis == 'keluar' else 'MASUK' }} BARANG</h3>
-</div>
-
-<div class="doc-meta">
-    <div><strong>No. Dokumen:</strong> ADP.17.01.015<br><strong>Revisi:</strong> 2</div>
-    <div style="text-align:right"><strong>Tgl. Terbit:</strong> {{ surat.tgl_terbit }}<br><strong>Halaman:</strong> 1/2</div>
-</div>
-
-<div class="info-box">
-    <table>
-        <tr><td style="width:50%"><strong>No:</strong> {{ surat.no_surat }}</td><td style="text-align:right"><strong>Tanggal:</strong> {{ surat.tanggal }}</td></tr>
-        <tr><td colspan="2"><strong>Divisi:</strong> {{ surat.divisi }} &nbsp; <span class="badge {{ 'badge-keluar' if surat.jenis=='keluar' else 'badge-masuk' }}">{{ surat.jenis | upper }}</span></td></tr>
-    </table>
-</div>
-
-<p class="section-title">DATA PEMOHON</p>
-<table class="data-table">
-    <tr><td style="width:25%;font-weight:bold">NAMA</td><td>{{ surat.nama }}</td></tr>
-    {% if surat.foto_ktp %}
-    <tr><td style="font-weight:bold">FOTO KTP/IDENTITAS</td><td><img src="file://{{ upload_dir }}/{{ surat.foto_ktp }}" style="max-height:80px;border-radius:4px;border:1px solid #e5e7eb;" alt="KTP"></td></tr>
-    {% endif %}
-    <tr><td style="font-weight:bold">BADGE</td><td>{{ surat.badge }}</td></tr>
-    <tr><td style="font-weight:bold">NO KENDARAAN</td><td>{{ surat.no_kendaraan }}</td></tr>
-    <tr><td style="font-weight:bold">PERUSAHAAN</td><td>{{ surat.perusahaan }}</td></tr>
-    <tr><td style="font-weight:bold">NO SPK/MEMO</td><td>{{ surat.no_spk }}{% if spk_url %} &nbsp;<a href="{{ spk_url }}" style="color:#1e40af;font-size:8.5pt;text-decoration:underline;">📎 Download File SPK</a>{% endif %}</td></tr>
-</table>
-
-<p style="font-size:9.5pt;margin:10px 0;">
-    Untuk membawa barang {{ 'keluar dari' if surat.jenis == 'keluar' else 'masuk ke' }} PT Indonesia Power UBP Jawa Tengah 2 Adipala dengan rincian sebagai berikut:
-</p>
-
-<p class="section-title">DAFTAR BARANG</p>
-<table class="barang-table">
-    <thead><tr><th style="width:5%">NO</th><th style="width:20%">NAMA BARANG</th><th style="width:7%">JML</th><th style="width:7%">SATUAN</th><th style="width:15%">KETERANGAN</th><th style="width:14%">FOTO</th><th style="width:16%">CEK USER</th><th style="width:16%">CEK SATPAM</th></tr></thead>
-    <tbody>
-        {% for item in surat.barang_items %}
-        <tr>
-            <td style="text-align:center">{{ loop.index }}</td>
-            <td>{{ item.nama_barang }}</td>
-            <td style="text-align:center">{{ item.jumlah }}</td>
-            <td style="text-align:center">{{ item.satuan }}</td>
-            <td>{{ item.keterangan or '-' }}</td>
-            <td style="text-align:center">
-                {% if item.foto %}
-                {% for f in item.foto %}
-                <img src="file://{{ upload_dir }}/{{ f }}" style="max-height:40px;max-width:50px;border-radius:3px;margin:1px;" alt="">
-                {% endfor %}
-                {% else %}-{% endif %}
-            </td>
-            <td style="text-align:center">
-                {% if item.approval_user == 'sesuai' %}
-                <span style="color:#16a34a;font-weight:bold">✓ Sesuai</span>
-                {% elif item.approval_user == 'tidak_sesuai' %}
-                <span style="color:#dc2626;font-weight:bold">✗ Tidak</span>
-                {% else %}-{% endif %}
-            </td>
-            <td style="text-align:center">
-                {% if item.approval_satpam == 'sesuai' %}
-                <span style="color:#16a34a;font-weight:bold">✓ Sesuai</span>
-                {% elif item.approval_satpam == 'tidak_sesuai' %}
-                <span style="color:#dc2626;font-weight:bold">✗ Tidak</span>
-                {% else %}-{% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<div class="signature-container">
-    <div class="sig-row">
-        <!-- Pemohon (Creator) -->
-        <div class="sig-box">
-            <div class="sig-title">Pemohon</div>
-            <div class="sig-status">&nbsp;</div>
-            <div class="sig-line"></div>
-            <div class="sig-name">{{ surat.pemohon or '________________' }}</div>
-            <div class="sig-role">Pemohon</div>
+    <div class="header-top">
+        <div class="header-logo">
+            <div class="header-logo-icon">
+                <img src="{{ logo_data_url }}" alt="Logo PLN" style="width:48px;height:48px;">
+            </div>
+            <div class="header-title">
+                <h1>PT PLN INDONESIA POWER</h1>
+                <p>Indonesia Power Integrated Management System</p>
+            </div>
         </div>
-        <!-- User / Pemberi Kerja -->
-        <div class="sig-box">
-            <div class="sig-title">Pemberi Kerja</div>
-            <div class="sig-status">
-                {% if surat.approval_user == 'sesuai' %}
-                <span class="stamp stamp-green">✓ SESUAI</span>
-                {% elif surat.approval_user == 'tidak_sesuai' %}
-                <span class="stamp stamp-red">✗ TIDAK SESUAI</span>
+        <div class="header-badge-wrapper">
+            {% if surat.unique_hash and qr_code_data_url %}
+            <div class="header-badge-qr">
+                <img src="{{ qr_code_data_url }}" alt="QR">
+            </div>
+            {% endif %}
+            <div class="header-badge">
+                <div class="type">{{ 'SURAT KELUAR' if surat.jenis == 'keluar' else 'SURAT MASUK' }}</div>
+                <div class="sub">Izin Barang</div>
+            </div>
+        </div>
+    </div>
+    <div class="header-meta">
+        <div class="header-meta-item">
+            <div class="header-meta-label">No. Surat</div>
+            <div class="header-meta-value">{{ surat.no_surat }}</div>
+        </div>
+        <div class="header-meta-item">
+            <div class="header-meta-label">Tanggal</div>
+            <div class="header-meta-value">{{ surat.tanggal }}</div>
+        </div>
+        <div class="header-meta-item">
+            <div class="header-meta-label">Tgl. Terbit</div>
+            <div class="header-meta-value">{{ surat.tgl_terbit }}</div>
+        </div>
+        <div class="header-meta-item">
+            <div class="header-meta-label">Divisi</div>
+            <div class="header-meta-value">{{ surat.divisi }}</div>
+        </div>
+        {% if surat.urgency == 'urgent' %}
+        <div class="header-meta-item">
+            <div class="header-meta-label">Urgensi</div>
+            <div class="header-meta-value"><span class="badge badge-warning">&#9889; URGENT</span></div>
+        </div>
+        {% endif %}
+        <div class="header-meta-item">
+            <div class="header-meta-label">Status</div>
+            <div class="header-meta-value">
+                {% if surat.status == 'approved' %}
+                <span class="badge badge-success">&#10003; Disetujui</span>
+                {% elif surat.status == 'rejected' %}
+                <span class="badge badge-danger">&#10007; Ditolak</span>
+                {% elif surat.status == 'review' %}
+                <span class="badge badge-warning">&#9676; Review</span>
                 {% else %}
-                <span class="stamp stamp-pending">⏳ Menunggu</span>
+                <span class="badge badge-gray">&#9675; Pending</span>
                 {% endif %}
             </div>
-            {% if surat.approval_user_at %}
-            <div class="sig-date">{{ surat.approval_user_at }}</div>
-            {% endif %}
-            <div class="sig-line"></div>
-            <div class="sig-name">{{ surat.approval_user_by_name or '________________' }}</div>
-            <div class="sig-role">User / Pemberi Kerja</div>
-        </div>
-        <!-- Satpam -->
-        <div class="sig-box">
-            <div class="sig-title">Diperiksa (Satpam)</div>
-            <div class="sig-status">
-                {% if surat.approval_satpam == 'sesuai' %}
-                <span class="stamp stamp-green">✓ SESUAI</span>
-                {% elif surat.approval_satpam == 'tidak_sesuai' %}
-                <span class="stamp stamp-red">✗ TIDAK SESUAI</span>
-                {% else %}
-                <span class="stamp stamp-pending">⏳ Menunggu</span>
-                {% endif %}
-            </div>
-            {% if surat.approval_satpam_at %}
-            <div class="sig-date">{{ surat.approval_satpam_at }}</div>
-            {% endif %}
-            <div class="sig-line"></div>
-            <div class="sig-name">{{ surat.approval_satpam_by_name or '________________' }}</div>
-            <div class="sig-role">Satpam</div>
-        </div>
-        <!-- Asman Umum -->
-        <div class="sig-box">
-            <div class="sig-title">Diperiksa (Asman)</div>
-            <div class="sig-status">
-                {% if surat.approval_asman == 'approved' %}
-                <span class="stamp stamp-green">✓ DISETUJUI</span>
-                {% elif surat.approval_asman == 'rejected' %}
-                <span class="stamp stamp-red">✗ DITOLAK</span>
-                {% else %}
-                <span class="stamp stamp-pending">⏳ Menunggu</span>
-                {% endif %}
-            </div>
-            {% if surat.approval_asman_at %}
-            <div class="sig-date">{{ surat.approval_asman_at }}</div>
-            {% endif %}
-            <div class="sig-line"></div>
-            <div class="sig-name">{{ surat.approval_asman_by_name or '________________' }}</div>
-            <div class="sig-role">Asman Umum</div>
-        </div>
-        <!-- Manager Administrasi -->
-        <div class="sig-box">
-            <div class="sig-title">Disetujui Oleh</div>
-            <div class="sig-status">
-                {% if surat.approval_manager == 'approved' %}
-                <span class="stamp stamp-green">✓ DISETUJUI</span>
-                {% elif surat.approval_manager == 'rejected' %}
-                <span class="stamp stamp-red">✗ DITOLAK</span>
-                {% else %}
-                <span class="stamp stamp-pending">⏳ Menunggu</span>
-                {% endif %}
-            </div>
-            {% if surat.approval_manager_at %}
-            <div class="sig-date">{{ surat.approval_manager_at }}</div>
-            {% endif %}
-            <div class="sig-line"></div>
-            <div class="sig-name">{{ surat.approval_manager_by_name or '________________' }}</div>
-            <div class="sig-role">Manager Administrasi</div>
         </div>
     </div>
 </div>
 
-<div class="footer">No. Dokumen: ADP.17.01.015 | Revisi: 2 | Tgl. Terbit: {{ surat.tgl_terbit }} | Halaman: 1/2</div>
+<div class="info-card">
+    <!-- Data Pemohon -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">&#128100;</div>
+            <h2 class="section-title">Data Pemohon</h2>
+        </div>
+        <div class="data-grid">
+            <div class="data-item">
+                <div class="data-label">Nama Lengkap</div>
+                <div class="data-value">{{ surat.nama }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Badge / ID</div>
+                <div class="data-value">{{ surat.badge }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Perusahaan</div>
+                <div class="data-value">{{ surat.perusahaan }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">No. Kendaraan</div>
+                <div class="data-value">{{ surat.no_kendaraan }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">No. SPK / MEMO</div>
+                <div class="data-value">{{ surat.no_spk }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Pemohon</div>
+                <div class="data-value">{{ surat.pemohon or '-' }}</div>
+            </div>
+            {% if surat.file_spk %}
+            <div class="data-item">
+                <div class="data-label">File SPK / Lampiran</div>
+                <div class="data-value">
+                    <a href="{{ spk_url }}" class="download-btn">
+                        <span>&#128206;</span>
+                        <span>Download File SPK</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            {% if surat.foto_ktp %}
+            <div class="data-item">
+                <div class="data-label">Foto KTP / Identitas</div>
+                <div class="ktp-image-container">
+                    <img src="file://{{ upload_dir }}/{{ surat.foto_ktp }}" alt="Foto KTP" style="max-width:100px;max-height:65px;border-radius:8px;border:2px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 
-<!-- PAGE 2 -->
+    <!-- Tanda Tangan -->
+    <div class="signature-section">
+        <div class="section-header">
+            <div class="section-icon">&#9997;</div>
+            <h2 class="section-title">Tanda Tangan</h2>
+        </div>
+
+        <!-- Determine which stages to show based on urgency -->
+        {% set show_user = True %}
+        {% set show_satpam = True %}
+        {% set show_asman = False %}
+        {% set show_manager = True %}
+
+        {% if surat.urgency == 'full' %}
+            {% set show_user = True %}
+            {% set show_satpam = True %}
+            {% set show_asman = True %}
+            {% set show_manager = True %}
+        {% elif surat.urgency == 'urgent' %}
+            {% set show_user = False %}
+            {% set show_satpam = False %}
+            {% set show_asman = False %}
+            {% set show_manager = True %}
+        {% else %}
+            {# Normal - without Asman #}
+            {% set show_user = True %}
+            {% set show_satpam = True %}
+            {% set show_asman = False %}
+            {% set show_manager = True %}
+        {% endif %}
+
+        <!-- Row 1: Dynamic based on urgency -->
+        <div class="sig-row">
+            <!-- Pemohon - Always show -->
+            <div class="sig-box">
+                <div class="sig-box-header">
+                    <span>Pemohon</span>
+                    {% if surat.pemohon %}
+                    <span class="sig-check">&#10003;</span>
+                    {% endif %}
+                </div>
+                <div class="sig-content">
+                    <div class="sig-line"></div>
+                    <div class="sig-name">{{ surat.pemohon or '________________' }}</div>
+                </div>
+            </div>
+
+            {% if show_user %}
+            <!-- Pemberi Kerja -->
+            <div class="sig-box">
+                <div class="sig-box-header">
+                    <span>Pemberi Kerja</span>
+                    {% if surat.approval_user == 'sesuai' %}
+                    <span class="sig-check">&#10003;</span>
+                    {% endif %}
+                </div>
+                <div class="sig-content">
+                    {% if surat.approval_user == 'sesuai' %}
+                    <div class="sig-stamp sig-stamp-green">&#10003; SESUAI</div>
+                    {% elif surat.approval_user == 'tidak_sesuai' %}
+                    <div class="sig-stamp sig-stamp-red">&#10007; TIDAK SESUAI</div>
+                    {% else %}
+                    <div class="sig-stamp sig-stamp-pending">&#9203; MENUNGGU</div>
+                    {% endif %}
+                    {% if surat.approval_user_at %}<div class="sig-date">{{ surat.approval_user_at }}</div>{% endif %}
+                    <div class="sig-line"></div>
+                    <div class="sig-name">{{ surat.approval_user_by_name or '________________' }}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if show_satpam %}
+            <!-- Satpam -->
+            <div class="sig-box">
+                <div class="sig-box-header">
+                    <span>Satpam</span>
+                    {% if surat.approval_satpam == 'sesuai' %}
+                    <span class="sig-check">&#10003;</span>
+                    {% endif %}
+                </div>
+                <div class="sig-content">
+                    {% if surat.approval_satpam == 'sesuai' %}
+                    <div class="sig-stamp sig-stamp-green">&#10003; SESUAI</div>
+                    {% elif surat.approval_satpam == 'tidak_sesuai' %}
+                    <div class="sig-stamp sig-stamp-red">&#10007; TIDAK SESUAI</div>
+                    {% else %}
+                    <div class="sig-stamp sig-stamp-pending">&#9203; MENUNGGU</div>
+                    {% endif %}
+                    {% if surat.approval_satpam_at %}<div class="sig-date">{{ surat.approval_satpam_at }}</div>{% endif %}
+                    <div class="sig-line"></div>
+                    <div class="sig-name">{{ surat.approval_satpam_by_name or '________________' }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Row 2: Asman & Manager (centered) -->
+        <div class="sig-row sig-row-center">
+            {% if show_asman %}
+            <!-- Asman Umum -->
+            <div class="sig-box">
+                <div class="sig-box-header">
+                    <span>Asman Umum</span>
+                    {% if surat.approval_asman == 'approved' %}
+                    <span class="sig-check">&#10003;</span>
+                    {% endif %}
+                </div>
+                <div class="sig-content">
+                    {% if surat.approval_asman == 'approved' %}
+                    <div class="sig-stamp sig-stamp-green">&#10003; DISETUJUI</div>
+                    {% elif surat.approval_asman == 'rejected' %}
+                    <div class="sig-stamp sig-stamp-red">&#10007; DITOLAK</div>
+                    {% else %}
+                    <div class="sig-stamp sig-stamp-pending">&#9203; MENUNGGU</div>
+                    {% endif %}
+                    {% if surat.approval_asman_at %}<div class="sig-date">{{ surat.approval_asman_at }}</div>{% endif %}
+                    <div class="sig-line"></div>
+                    <div class="sig-name">{{ surat.approval_asman_by_name or '________________' }}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if show_manager %}
+            <!-- Manager -->
+            <div class="sig-box">
+                <div class="sig-box-header">
+                    <span>Manager</span>
+                    {% if surat.approval_manager == 'approved' %}
+                    <span class="sig-check">&#10003;</span>
+                    {% endif %}
+                </div>
+                <div class="sig-content">
+                    {% if surat.approval_manager == 'approved' %}
+                    <div class="sig-stamp sig-stamp-green">&#10003; DISETUJUI</div>
+                    {% elif surat.approval_manager == 'rejected' %}
+                    <div class="sig-stamp sig-stamp-red">&#10007; DITOLAK</div>
+                    {% else %}
+                    <div class="sig-stamp sig-stamp-pending">&#9203; MENUNGGU</div>
+                    {% endif %}
+                    {% if surat.approval_manager_at %}<div class="sig-date">{{ surat.approval_manager_at }}</div>{% endif %}
+                    <div class="sig-line"></div>
+                    <div class="sig-name">{{ surat.approval_manager_by_name or '________________' }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Urgency Info Badge -->
+        {% if surat.urgency == 'urgent' %}
+        <div style="text-align:center;margin-top:10px;padding:6px 12px;background:#fef3c7;border-radius:6px;font-size:7pt;color:#92400e;">
+            <strong>&#9889; FAST TRACK:</strong> Persetujuan langsung oleh Manager tanpa melalui tahap sebelumnya
+        </div>
+        {% elif surat.urgency == 'full' %}
+        <div style="text-align:center;margin-top:10px;padding:6px 12px;background:#ede9fe;border-radius:6px;font-size:7pt;color:#5b21b6;">
+            <strong>&#9670; FULL APPROVAL:</strong> Menjalani semua tahap persetujuan
+        </div>
+        {% else %}
+        <div style="text-align:center;margin-top:10px;padding:6px 12px;background:#dbeafe;border-radius:6px;font-size:7pt;color:#1e40af;">
+            <strong>&#9702; NORMAL:</strong> Tanpa tahap Asman Umum
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        <div class="footer-left">PT PLN Indonesia Power UBP Jawa Tengah 2 Adipala</div>
+        <div class="footer-right">
+            <div>No. Dokumen: ADP.17.01.015 | Revisi: 2</div>
+            <div>Halaman 1/3</div>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE 2: Daftar Barang -->
 <div class="page-break"></div>
 
+<div class="page-container">
+<div class="page-content">
 <div class="header">
-    <h1>PT PLN INDONESIA POWER</h1>
-    <h2>Indonesia Power Integrated Management System</h2>
-    <h3>SURAT IZIN {{ 'KELUAR' if surat.jenis == 'keluar' else 'MASUK' }} BARANG</h3>
-</div>
-
-<div class="doc-meta">
-    <div><strong>No. Dokumen:</strong> ADP.17.01.015<br><strong>Revisi:</strong> 2</div>
-    <div style="text-align:right"><strong>Tgl. Terbit:</strong> {{ surat.tgl_terbit }}<br><strong>Halaman:</strong> 2/2</div>
-</div>
-
-<div class="info-box">
-    <table>
-        <tr><td style="width:50%"><strong>No:</strong> {{ surat.no_surat }}</td><td style="text-align:right"><strong>Tanggal:</strong> {{ surat.tanggal }}</td></tr>
-        <tr><td colspan="2"><strong>Divisi:</strong> {{ surat.divisi }}</td></tr>
-    </table>
-</div>
-
-<p class="section-title">LAMPIRAN FOTO BARANG</p>
-<div class="foto-box">
-    {% set foto_items = [] %}
-    {% for item in surat.barang_items %}{% if item.foto %}{% for f in item.foto %}{% if foto_items.append({'f':f,'nama':item.nama_barang}) %}{% endif %}{% endfor %}{% endif %}{% endfor %}
-    {% set fc = foto_items | length %}
-    {% if fc > 0 %}
-    {% set cw = '280px' if fc <= 1 else ('220px' if fc <= 2 else ('160px' if fc <= 4 else '120px')) %}
-    {% set iw = '260px' if fc <= 1 else ('200px' if fc <= 2 else ('145px' if fc <= 4 else '110px')) %}
-    {% set ih = '200px' if fc <= 1 else ('150px' if fc <= 2 else ('110px' if fc <= 4 else '90px')) %}
-    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
-        {% for p in foto_items %}
-        <div style="display:inline-block;text-align:center;width:{{ cw }};">
-            <img src="file://{{ upload_dir }}/{{ p.f }}" style="width:{{ iw }};height:{{ ih }};object-fit:cover;border-radius:6px;border:1.5px solid #d1d5db;" alt="{{ p.nama }}">
-            <p style="font-size:{{ '9pt' if fc <= 2 else '7.5pt' }};font-weight:bold;color:#1e40af;margin:4px 0 0;line-height:1.2;word-wrap:break-word;">{{ p.nama }}</p>
+    <div class="header-top">
+        <div class="header-logo">
+            <div class="header-logo-icon">
+                <img src="{{ logo_data_url }}" alt="Logo PLN" style="width:48px;height:48px;">
+            </div>
+            <div class="header-title">
+                <h1>PT PLN INDONESIA POWER</h1>
+                <p>Indonesia Power Integrated Management System</p>
+            </div>
         </div>
-        {% endfor %}
+        <div class="header-badge">
+            <div class="type">{{ 'SURAT KELUAR' if surat.jenis == 'keluar' else 'SURAT MASUK' }}</div>
+            <div class="sub">Daftar Barang</div>
+        </div>
     </div>
-    {% else %}
-    <p style="color:#999;margin-top:80px;font-size:9pt">Foto barang yang akan di{{ 'keluarkan' if surat.jenis=='keluar' else 'masukkan' }}</p>
-    {% endif %}
+    <div class="header-meta">
+        <div class="header-meta-item">
+            <div class="header-meta-label">No. Surat</div>
+            <div class="header-meta-value">{{ surat.no_surat }}</div>
+        </div>
+        <div class="header-meta-item">
+            <div class="header-meta-label">Tanggal</div>
+            <div class="header-meta-value">{{ surat.tanggal }}</div>
+        </div>
+        <div class="header-meta-item">
+            <div class="header-meta-label">Total Item</div>
+            <div class="header-meta-value">{{ surat.barang_items|length }} Barang</div>
+        </div>
+    </div>
 </div>
 
-<p class="section-title" style="margin-top:24px">CATATAN PENTING</p>
-<div style="font-size:9pt;line-height:1.8;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;">
-    <ol style="margin:0;padding-left:18px;">
+<div class="info-card">
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">&#128230;</div>
+            <h2 class="section-title">Daftar Barang ({{ surat.barang_items|length }} Item)</h2>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:4%">No</th>
+                        <th style="width:20%">Nama Barang</th>
+                        <th style="width:5%">Jml</th>
+                        <th style="width:6%">Satuan</th>
+                        <th style="width:18%">Keterangan</th>
+                        <th style="width:12%">Foto</th>
+                        <th style="width:12%">Cek User</th>
+                        <th style="width:12%">Cek Satpam</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in surat.barang_items %}
+                    <tr>
+                        <td style="text-align:center;font-weight:600;color:#64748b">{{ loop.index }}</td>
+                        <td><strong>{{ item.nama_barang }}</strong></td>
+                        <td style="text-align:center">{{ item.jumlah }}</td>
+                        <td style="text-align:center"><span class="badge badge-info">{{ item.satuan }}</span></td>
+                        <td style="color:#64748b">{{ item.keterangan or '-' }}</td>
+                        <td>
+                            {% if item.foto %}
+                            <div class="foto-thumb">
+                                {% for f in item.foto[:4] %}
+                                <img src="file://{{ upload_dir }}/{{ f }}" alt="Foto">
+                                {% endfor %}
+                                {% if item.foto|length > 4 %}
+                                <span class="more-count">+{{ item.foto|length - 4 }}</span>
+                                {% endif %}
+                            </div>
+                            {% else %}<span style="color:#cbd5e1">-</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if item.approval_user == 'sesuai' %}
+                            <span class="badge badge-success">&#10003;</span>
+                            {% elif item.approval_user == 'tidak_sesuai' %}
+                            <span class="badge badge-danger">&#10007;</span>
+                            {% else %}<span class="badge badge-gray">&#9675;</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if item.approval_satpam == 'sesuai' %}
+                            <span class="badge badge-success">&#10003;</span>
+                            {% elif item.approval_satpam == 'tidak_sesuai' %}
+                            <span class="badge badge-danger">&#10007;</span>
+                            {% else %}<span class="badge badge-gray">&#9675;</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="footer">
+    <div class="footer-left">PT PLN Indonesia Power UBP Jawa Tengah 2 Adipala</div>
+    <div class="footer-right">
+        <div>No. Dokumen: ADP.17.01.015 | Revisi: 2</div>
+        <div>Halaman 2/3</div>
+    </div>
+</div>
+</div>
+
+<!-- PAGE 3: Lampiran Foto -->
+<div class="page-break"></div>
+
+<div class="page-container">
+<div class="page-content">
+<div class="header">
+    <div class="header-top">
+        <div class="header-logo">
+            <div class="header-logo-icon">
+                <img src="{{ logo_data_url }}" alt="Logo PLN" style="width:48px;height:48px;">
+            </div>
+            <div class="header-title">
+                <h1>PT PLN INDONESIA POWER</h1>
+                <p>Indonesia Power Integrated Management System</p>
+            </div>
+        </div>
+        <div class="header-badge">
+            <div class="type">{{ 'SURAT KELUAR' if surat.jenis == 'keluar' else 'SURAT MASUK' }}</div>
+            <div class="sub">Lampiran Foto</div>
+        </div>
+    </div>
+    <div class="header-meta">
+        <div class="header-meta-item">
+            <div class="header-meta-label">No. Surat</div>
+            <div class="header-meta-value">{{ surat.no_surat }}</div>
+        </div>
+        <div class="header-meta-item">
+            <div class="header-meta-label">Tanggal</div>
+            <div class="header-meta-value">{{ surat.tanggal }}</div>
+        </div>
+        <div class="header-meta-item">
+            <div class="header-meta-label">Total Foto</div>
+            <div class="header-meta-value">
+{% set ns = namespace(foto_count=0) %}
+{% for item in surat.barang_items %}
+    {% if item.foto %}
+        {% set ns.foto_count = ns.foto_count + (item.foto|length) %}
+    {% endif %}
+{% endfor %}
+{{ ns.foto_count }} Foto
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="info-card">
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">&#128247;</div>
+            <h2 class="section-title">Lampiran Foto Barang</h2>
+        </div>
+
+{% set ns = namespace(foto_count=0) %}
+{% for item in surat.barang_items %}
+    {% if item.foto %}
+        {% set ns.foto_count = ns.foto_count + (item.foto|length) %}
+    {% endif %}
+{% endfor %}
+
+{% if ns.foto_count > 0 %}
+{% set layout_class = 'foto-layout-1' if ns.foto_count == 1 else 'foto-layout-2' if ns.foto_count == 2 else 'foto-layout-3' if ns.foto_count <= 4 else 'foto-layout-4' if ns.foto_count <= 8 else 'foto-layout-5plus' %}
+<div class="foto-gallery {{ layout_class }}">
+{% for item in surat.barang_items %}
+{% if item.foto %}
+{% for f in item.foto %}
+<div class="foto-item">
+    <img src="file://{{ upload_dir }}/{{ f }}" alt="{{ item.nama_barang }}">
+    <div class="foto-item-label">{{ item.nama_barang }}</div>
+</div>
+{% endfor %}
+{% endif %}
+{% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;padding:60px;color:#94a3b8;">
+    <div style="font-size:48px;margin-bottom:12px;">&#128247;</div>
+    <p style="font-size:10pt;">Tidak ada foto barang yang dilampirkan</p>
+</div>
+{% endif %}
+    </div>
+</div>
+
+<!-- Catatan Penting -->
+<div class="notes-box">
+    <div class="notes-title">
+        <span>&#9888;</span>
+        <span>Catatan Penting</span>
+    </div>
+    <ol class="notes-list">
         <li>Surat ini harus dibawa saat pengambilan/pengiriman barang</li>
         <li>Barang harus diperiksa oleh petugas keamanan sebelum {{ 'keluar' if surat.jenis=='keluar' else 'masuk' }}</li>
         <li>Tanda tangan dan stempel diperlukan untuk keabsahan surat</li>
@@ -269,10 +973,16 @@
         <li>Barang yang {{ 'keluar' if surat.jenis=='keluar' else 'masuk' }} harus sesuai dengan daftar yang tercantum</li>
     </ol>
 </div>
-
-<div class="footer" style="margin-top:30px;">
-    No. Dokumen: ADP.17.01.015 | Revisi: 2 | Tgl. Terbit: {{ surat.tgl_terbit }} | Halaman: 2/2<br>
-    PT PLN Indonesia Power UBP Jawa Tengah 2 Adipala
 </div>
+
+<div class="footer">
+    <div class="footer-left">PT PLN Indonesia Power UBP Jawa Tengah 2 Adipala</div>
+    <div class="footer-right">
+        <div>No. Dokumen: ADP.17.01.015 | Revisi: 2</div>
+        <div>Halaman 3/3</div>
+    </div>
+</div>
+</div>
+
 </body>
 </html>
